@@ -1,10 +1,17 @@
 #include "SocketLibrary.h" // socket functions
 
 void socketFunc();
+void handleArguments();
 
 int main(int argc, char *argv[])
 {
+    handleArguments(argc, argv);
+    socketFunc();
+    return 0;
+}
 
+void handleArguments(int argc, char *argv[])
+{
     if (argc < 2)
     {
         fprintf(stderr, "Not enough arguments.\n");
@@ -13,7 +20,7 @@ int main(int argc, char *argv[])
 
     if (strcmp(argv[1], "configure") == 0)
     {
-        if (argc < 4)
+        if (argc != 4)
         {
             fprintf(stderr, "Usage: %s configure <IP> <port>\n", argv[0]);
             exit(EXIT_FAILURE);
@@ -21,48 +28,105 @@ int main(int argc, char *argv[])
     }
     else if (strcmp(argv[1], "checkout") == 0)
     {
+        if (argc != 3)
+        {
+            fprintf(stderr, "Usage: %s checkout <project name>\n", argv[0]);
+            exit(EXIT_FAILURE);
+        }
     }
     else if (strcmp(argv[1], "update") == 0)
     {
+        if (argc != 3)
+        {
+            fprintf(stderr, "Usage: %s update <project name>\n", argv[0]);
+            exit(EXIT_FAILURE);
+        }
     }
     else if (strcmp(argv[1], "upgrade") == 0)
     {
+        if (argc != 3)
+        {
+            fprintf(stderr, "Usage: %s upgrade <project name>\n", argv[0]);
+            exit(EXIT_FAILURE);
+        }
     }
     else if (strcmp(argv[1], "commit") == 0)
     {
+        if (argc != 3)
+        {
+            fprintf(stderr, "Usage: %s commit <project name>\n", argv[0]);
+            exit(EXIT_FAILURE);
+        }
     }
     else if (strcmp(argv[1], "push") == 0)
     {
+        if (argc != 3)
+        {
+            fprintf(stderr, "Usage: %s push <project name>\n", argv[0]);
+            exit(EXIT_FAILURE);
+        }
     }
     else if (strcmp(argv[1], "create") == 0)
     {
+        if (argc != 3)
+        {
+            fprintf(stderr, "Usage: %s create <project name>\n", argv[0]);
+            exit(EXIT_FAILURE);
+        }
     }
     else if (strcmp(argv[1], "destroy") == 0)
     {
+        if (argc != 3)
+        {
+            fprintf(stderr, "Usage: %s destroy <project name>\n", argv[0]);
+            exit(EXIT_FAILURE);
+        }
     }
     else if (strcmp(argv[1], "add") == 0)
     {
+        if (argc != 4)
+        {
+            fprintf(stderr, "Usage: %s add <project name> <filename>\n", argv[0]);
+            exit(EXIT_FAILURE);
+        }
     }
     else if (strcmp(argv[1], "remove") == 0)
     {
+        if (argc != 4)
+        {
+            fprintf(stderr, "Usage: %s remove <project name> <filename>\n", argv[0]);
+            exit(EXIT_FAILURE);
+        }
     }
     else if (strcmp(argv[1], "currentversion") == 0)
     {
+        if (argc != 3)
+        {
+            fprintf(stderr, "Usage: %s currentversion <project name>\n", argv[0]);
+            exit(EXIT_FAILURE);
+        }
     }
     else if (strcmp(argv[1], "history") == 0)
     {
+        if (argc != 3)
+        {
+            fprintf(stderr, "Usage: %s history <project name>\n", argv[0]);
+            exit(EXIT_FAILURE);
+        }
     }
     else if (strcmp(argv[1], "rollback") == 0)
     {
+        if (argc != 4)
+        {
+            fprintf(stderr, "Usage: %s rollback <project name> <version>\n", argv[0]);
+            exit(EXIT_FAILURE);
+        }
     }
     else
     {
         fprintf(stderr, "Command not found\n");
         exit(EXIT_FAILURE);
     }
-
-    socketFunc();
-    return 0;
 }
 
 #define PORT 9418
