@@ -53,7 +53,6 @@ void handleServerClose(int signal)
         exit(EXIT_FAILURE);
     }
     exit(EXIT_SUCCESS);
-    return;
 }
 
 void setSocketOptions(struct server_type *server)
@@ -77,12 +76,14 @@ void setSocketOptions(struct server_type *server)
     if (setsockopt(server->socket_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
     {
         fprintf(stderr, "SO_REUSEADDR has %sfailed%s to be enabled.\nFILE: %s \nLINE: %d\n", RED, RESET, __FILE__, __LINE__);
+        return;
     }
 
     printf("SO_REUSEADDR has %ssuccessfully%s been enabled...\n", GREEN, RESET);
+    return;
 }
 
-void getClientIPAddress(int fd, char *IP)
+void getIPAddress(int fd, char *IP)
 {
     struct sockaddr_in clientAddress;
     socklen_t clientLength = sizeof(clientAddress);
@@ -90,11 +91,11 @@ void getClientIPAddress(int fd, char *IP)
 
     if (getpeername(fd, (struct sockaddr *)&clientAddress, &clientLength) == -1)
     {
-        fprintf(stderr, "Unable to get client's IP Address.\n");
+        fprintf(stderr, "Unable to get a valid IP Address.\n");
+        strcpy(IP, "NULL");
         return;
     }
 
     strcpy(IP, inet_ntoa(clientAddress.sin_addr));
-
     return;
 }

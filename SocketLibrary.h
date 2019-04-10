@@ -24,6 +24,6 @@ extern void bindSocket();
 extern void listenSocket();
 extern void handleServerClose();
 extern void setSocketOptions();
-extern void getClientIPAddress();
+extern void getIPAddress();
 
 #endif /* _SOCKETLIBRARY_h */

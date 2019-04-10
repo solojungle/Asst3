@@ -20,3 +20,8 @@ Status Update - Ali Awari - 4/10/19 @ 3:25PM
 * Now shows clients ip address on join/leave.
 * Temporary client code added.
 * Makefile updated to compile client.
+
+Status Update - Ali Awari - 4/10/19 @ 4:06PM
+-----------------------------------------------
+* Created more generic function names in Socket Lib
+* Added missing return statements to function

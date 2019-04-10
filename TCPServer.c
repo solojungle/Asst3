@@ -47,7 +47,7 @@ void acceptSocketConnection(struct server_type *server)
     }
 
     char clientIP[20];
-    getClientIPAddress(connection_fd, clientIP); // client's ip address for better logs.
+    getIPAddress(connection_fd, clientIP); // client's ip address for better logs.
 
     printf("[%s+%s] %s has connected to the server.\n", GREEN, RESET, clientIP);
 
