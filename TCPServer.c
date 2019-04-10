@@ -1,9 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>     // exit(), EXIT_FAILURE, EXIT_SUCCESS
-#include <sys/socket.h> // socket(), bind()
-#include <netinet/in.h> // htonl(), htons()
-#include <unistd.h>     // close()
-#include "TCPServer.h"
+#include <stdio.h>         // stderr
+#include <unistd.h>        // close()
+#include <string.h>        // memset()
+#include "SocketLibrary.h" // socket functions
+#include "TCPServer.h"     // forward declarations
 
 int main(int argc, char *argv[])
 {
@@ -19,61 +18,18 @@ int main(int argc, char *argv[])
     socketAddress.sin_addr.s_addr = htonl(INADDR_ANY); // binds the socket to all available interfaces (not just "localhost").
     socketAddress.sin_port = htons(PORT);              // set to port number (default 9418).
 
-    bindSocket(&server, socketAddress); // bind socket, then check to see if socket has failed.
+    setSocketOptions(&server); // prevent socket from failing to bind
+
+    bindSocket(&server, socketAddress); // bind socket to address, then check to see if socket has failed.
 
     listenSocket(&server, socketAddress, BACKLOG, PORT); // begin to listen on socket, check for failure.
 
     while (1) // begin accepting server connections.
     {
-        acceptSocketConnection(&server); // how to handle a connection request.
+        acceptSocketConnection(&server); // handling a connection request.
     }
 
     return 0;
-}
-
-void initializeSocket(struct server_type *server)
-{
-    server->socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (server->socket_fd == -1) // create socket, then check to see if socket has failed.
-    {
-        fprintf(stderr, "Socket has %sfailed%s to be created.\nFILE: %s \nLINE: %d\n", RED, RESET, __FILE__, __LINE__);
-        exit(EXIT_FAILURE);
-    }
-
-    printf("Socket has been %ssuccessfully%s created...\n", GREEN, RESET);
-    return;
-}
-
-void bindSocket(struct server_type *server, struct sockaddr_in server_addr)
-{
-    if (bind(server->socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) // bind socket, then check to see if socket has failed.
-    {
-        fprintf(stderr, "Socket has %sfailed%s to bind to an address.\nFILE: %s \nLINE: %d\n", RED, RESET, __FILE__, __LINE__);
-        exit(EXIT_FAILURE);
-    }
-
-    printf("Socket has %ssuccessfully%s binded to an address...\n", GREEN, RESET);
-    return;
-}
-
-void listenSocket(struct server_type *server, struct sockaddr_in server_addr, int BACKLOG, int PORT)
-{
-    if (listen(server->socket_fd, BACKLOG) == -1) // begin to listen on socket, check for failure.
-    {
-        fprintf(stderr, "Socket has %sfailed%s to listen on port: %i.\nFILE: %s \nLINE: %d\n", RED, RESET, server_addr.sin_port, __FILE__, __LINE__);
-        exit(EXIT_FAILURE);
-    }
-
-    if (PORT == 9418)
-    {
-        printf("Server is now listening on port: %s%i%s (default).\n", GREEN, PORT, RESET);
-    }
-    else
-    {
-        printf("Server is now listening on port: %s%i%s.\n", GREEN, PORT, RESET);
-    }
-
-    return;
 }
 
 void acceptSocketConnection(struct server_type *server)
@@ -88,17 +44,28 @@ void acceptSocketConnection(struct server_type *server)
     if (connection_fd == -1)
     {
         fprintf(stderr, "Server has %sfailed%s to accept a connection.\nFILE: %s \nLINE: %d\n", RED, RESET, __FILE__, __LINE__);
-        exit(EXIT_FAILURE);
+        handleServerClose(-1); // shutdown server correctly.
     }
 
     printf("[%s+%s] Client has connected to the server.\n", GREEN, RESET);
 
+    handleClientInput(*server);
+
     if (close(connection_fd) == -1)
     {
         fprintf(stderr, "Server has %sfailed%s to close a connection.\nFILE: %s \nLINE: %d\n", RED, RESET, __FILE__, __LINE__);
-        exit(EXIT_FAILURE);
+        handleServerClose(-1); // shutdown server correctly.
     }
 
     printf("[%s-%s] Client has disconnected from the server.\n", RED, RESET);
+    return;
+}
+
+void handleClientInput(struct server_type server)
+{
+    char buffer[80];
+    memset(buffer, 0, sizeof(buffer));
+    read(server.socket_fd, buffer, sizeof(buffer));
+    printf("Client says: %s\n", buffer);
     return;
 }
