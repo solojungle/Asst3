@@ -23,5 +23,6 @@ Status Update - Ali Awari - 4/10/19 @ 3:25PM
 
 Status Update - Ali Awari - 4/10/19 @ 4:06PM
 -----------------------------------------------
-* Created more generic function names in Socket Lib
-* Added missing return statements to function
+* Created more generic function names in Socket Lib.
+* Added missing return statements to function.
+* Cleaned client up a bit.

@@ -1,22 +1,17 @@
-#include <string.h>
-#include <arpa/inet.h>
-#include <unistd.h>
 #include "SocketLibrary.h" // socket functions
 
 #define PORT 9418
 
 int main(int argc, char *argv[])
 {
+    struct server_type server; // declare struct.
     struct sockaddr_in address;
     int sock = 0, valread;
     struct sockaddr_in serv_addr;
     char *hello = "Hello from client";
     char buffer[1024] = {0};
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    {
-        printf("\n Socket creation error \n");
-        return -1;
-    }
+
+    initializeSocket(&server);
 
     memset(&serv_addr, '0', sizeof(serv_addr));
 
@@ -30,12 +25,12 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+    if (connect(server.socket_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
         printf("\nConnection Failed \n");
         return -1;
     }
-    send(sock, hello, strlen(hello), 0);
+    send(server.socket_fd, hello, strlen(hello), 0);
     printf("Message sent\n");
     // valread = read(sock, buffer, 1024);
     // printf("%s\n", buffer);
