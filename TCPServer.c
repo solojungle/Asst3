@@ -1,6 +1,5 @@
 #include <stdio.h>         // stderr
 #include <unistd.h>        // close()
-#include <string.h>        // memset()
 #include "SocketLibrary.h" // socket functions
 #include "TCPServer.h"     // forward declarations
 
@@ -18,7 +17,7 @@ int main(int argc, char *argv[])
     socketAddress.sin_addr.s_addr = htonl(INADDR_ANY); // binds the socket to all available interfaces (not just "localhost").
     socketAddress.sin_port = htons(PORT);              // set to port number (default 9418).
 
-    setSocketOptions(&server); // prevent socket from failing to bind
+    setSocketOptions(&server); // prevent socket from failing to bind.
 
     bindSocket(&server, socketAddress); // bind socket to address, then check to see if socket has failed.
 
@@ -44,12 +43,19 @@ void acceptSocketConnection(struct server_type *server)
     if (connection_fd == -1)
     {
         fprintf(stderr, "Server has %sfailed%s to accept a connection.\nFILE: %s \nLINE: %d\n", RED, RESET, __FILE__, __LINE__);
-        handleServerClose(-1); // shutdown server correctly.
+        return;
     }
 
-    printf("[%s+%s] Client has connected to the server.\n", GREEN, RESET);
+    char clientIP[20];
+    getClientIPAddress(connection_fd, clientIP); // client's ip address for better logs.
 
-    handleClientInput(*server);
+    printf("[%s+%s] %s has connected to the server.\n", GREEN, RESET, clientIP);
+
+    while (1)
+    {
+        handleClientInput(connection_fd);
+        break;
+    }
 
     if (close(connection_fd) == -1)
     {
@@ -57,15 +63,15 @@ void acceptSocketConnection(struct server_type *server)
         handleServerClose(-1); // shutdown server correctly.
     }
 
-    printf("[%s-%s] Client has disconnected from the server.\n", RED, RESET);
+    printf("[%s-%s] %s has disconnected from the server.\n", RED, RESET, clientIP);
     return;
 }
 
-void handleClientInput(struct server_type server)
+void handleClientInput(int connection_fd)
 {
     char buffer[80];
     memset(buffer, 0, sizeof(buffer));
-    read(server.socket_fd, buffer, sizeof(buffer));
-    printf("Client says: %s\n", buffer);
+    read(connection_fd, buffer, sizeof(buffer));
+    printf("%sIssued command: %s%s\n", YELLOW, buffer, RESET);
     return;
 }

@@ -10,4 +10,13 @@ Status Update - Ali Awari - 4/9/19 @ 9:12PM
 -----------------------------------------------
 * Added core socket library.
 * Fixed error where quiting program, would leave socket on TIME_WAIT.
-* Started attempting to read client input
+* Started attempting to read client input.
+* TODO see if we need handleServerClose(), and SIGINIT catch.
+* TODO figure out what to do when connection fails and disconnect fails.
+
+Status Update - Ali Awari - 4/10/19 @ 3:25PM
+-----------------------------------------------
+* Added better readability for console commands.
+* Now shows clients ip address on join/leave.
+* Temporary client code added.
+* Makefile updated to compile client.

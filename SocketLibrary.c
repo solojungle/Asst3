@@ -35,11 +35,11 @@ void listenSocket(struct server_type *server, struct sockaddr_in server_addr, in
 
     if (PORT == 9418)
     {
-        printf("Server is now listening on port: %s%i%s (default).\n", GREEN, PORT, RESET);
+        printf("Server is now listening on port: %s%i%s (default).\n\n", GREEN, PORT, RESET);
     }
     else
     {
-        printf("Server is now listening on port: %s%i%s.\n", GREEN, PORT, RESET);
+        printf("Server is now listening on port: %s%i%s.\n\n", GREEN, PORT, RESET);
     }
 
     return;
@@ -47,7 +47,7 @@ void listenSocket(struct server_type *server, struct sockaddr_in server_addr, in
 
 void handleServerClose(int signal)
 {
-    printf("\n%sServer shutting down, closing all threads.%s\n", RED, RESET);
+    printf("%sServer shutting down, closing all threads.%s\n", RED, RESET);
     if (signal == -1)
     {
         exit(EXIT_FAILURE);
@@ -80,4 +80,21 @@ void setSocketOptions(struct server_type *server)
     }
 
     printf("SO_REUSEADDR has %ssuccessfully%s been enabled...\n", GREEN, RESET);
+}
+
+void getClientIPAddress(int fd, char *IP)
+{
+    struct sockaddr_in clientAddress;
+    socklen_t clientLength = sizeof(clientAddress);
+    int result = getpeername(fd, (struct sockaddr *)&clientAddress, &clientLength);
+
+    if (getpeername(fd, (struct sockaddr *)&clientAddress, &clientLength) == -1)
+    {
+        fprintf(stderr, "Unable to get client's IP Address.\n");
+        return;
+    }
+
+    strcpy(IP, inet_ntoa(clientAddress.sin_addr));
+
+    return;
 }

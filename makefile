@@ -1,9 +1,12 @@
 CFLAGS= -g
 
-all: compile clean run
+all: compileServer compileClient clean run
 
-compile: TCPServer.c SocketLibrary.o TCPServer.h
+compileServer: TCPServer.c SocketLibrary.o TCPServer.h
 	gcc $(CFLAGS) -o WTF TCPServer.c SocketLibrary.o
+
+compileClient: Client.c SocketLibrary.o
+	gcc $(CFLAGS) -o client Client.c SocketLibrary.o
 
 SocketLibrary.o: SocketLibrary.c SocketLibrary.h
 	gcc $(CFLAGS) -c SocketLibrary.c

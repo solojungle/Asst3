@@ -4,6 +4,8 @@
 #include <stdio.h>      // stderr
 #include <stdlib.h>     // exit(), EXIT_FAILURE, EXIT_SUCCESS
 #include <signal.h>     // signal()
+#include <string.h>     // strcpy(), memset()
+#include <arpa/inet.h>  // inet_ntoa()
 #include <netinet/in.h> // htonl(), htons(), sockaddr_in
 #include <sys/socket.h> // socket(), bind(), AF_INET
 
@@ -22,5 +24,6 @@ extern void bindSocket();
 extern void listenSocket();
 extern void handleServerClose();
 extern void setSocketOptions();
+extern void getClientIPAddress();
 
 #endif /* _SOCKETLIBRARY_h */
