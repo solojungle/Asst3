@@ -1,5 +1,7 @@
 #include "SocketLibrary.h" // socket functions
 
+void socketFunc();
+
 int main(int argc, char *argv[])
 {
 
@@ -11,6 +13,11 @@ int main(int argc, char *argv[])
 
     if (strcmp(argv[1], "configure") == 0)
     {
+        if (argc < 4)
+        {
+            fprintf(stderr, "Usage: %s configure <IP> <port>\n", argv[0]);
+            exit(EXIT_FAILURE);
+        }
     }
     else if (strcmp(argv[1], "checkout") == 0)
     {
@@ -51,6 +58,7 @@ int main(int argc, char *argv[])
     else
     {
         fprintf(stderr, "Command not found\n");
+        exit(EXIT_FAILURE);
     }
 
     socketFunc();

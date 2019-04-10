@@ -30,3 +30,4 @@ Status Update - Ali Awari - 4/10/19 @ 4:06PM
 Status Update - Ali Awari - 4/10/19 @ 6:05PM
 -----------------------------------------------
 * Added argument framework to Client.c
+* Fixed error in client.c
