@@ -38,4 +38,8 @@ Status Update - Ali Awari - 4/11/19 @ 1:43PM
 * Being handling arguments.
 * Now send number to server as command for ease of conversion.
 * Server now sends back confirmation message.
+
+Status Update - Ali Awari - 4/11/19 @ 5:32PM
+-----------------------------------------------
 * Added comments to server/socket files.
+* Removed redundant line from getIPAddress()

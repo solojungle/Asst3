@@ -84,9 +84,9 @@ void handleClientInput(int connection_fd)
 
     recv(connection_fd, buffer, sizeof(buffer), 0); // read() and recv() are almost interchangeable.
 
-    handleArguments(buffer);
+    handleArguments(buffer); // checks to see if argument exists and executes them.
 
-    char *success = "SERVER: Data was received.\n";
+    char *success = "SERVER: Data was received.\n";   // even if command doesn't exist need to confirm connection was valid.
     send(connection_fd, success, strlen(success), 0); // write() and send() are almost interchangeable.
     return;
 }

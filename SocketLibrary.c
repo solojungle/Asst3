@@ -4,7 +4,7 @@
  *  initializeSocket()
  *  @params: server_type *, struct that contains the server file descriptor.
  *  @returns: void.
- *  @comments: function creates and initializes a socket
+ *  @comments: function creates and initializes a socket.
  **/
 void initializeSocket(struct server_type *server)
 {
@@ -56,7 +56,7 @@ void listenSocket(struct server_type *server, struct sockaddr_in server_addr, in
         handleServerClose(-1); // shutdown server correctly.
     }
 
-    if (server_addr.sin_port == 9418)
+    if (server_addr.sin_port == 9418) // check to see if port is default.
     {
         printf("Server is now listening on port: %s%i%s (default).\n\n", GREEN, server_addr.sin_port, RESET);
     }
@@ -111,7 +111,7 @@ void setSocketOptions(struct server_type *server)
      *  "half dead", and your socket can bind to exactly the same address without any problem.
      **/
     int enable = 1;
-    if (setsockopt(server->socket_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0)
+    if (setsockopt(server->socket_fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(int)) < 0) // enables REUSEADDR.
     {
         fprintf(stderr, "SO_REUSEADDR has %sfailed%s to be enabled.\nFILE: %s \nLINE: %d\n", RED, RESET, __FILE__, __LINE__);
         return;
@@ -133,15 +133,14 @@ void getIPAddress(int fd, char *IP)
 {
     struct sockaddr_in clientAddress;
     socklen_t clientLength = sizeof(clientAddress);
-    int result = getpeername(fd, (struct sockaddr *)&clientAddress, &clientLength);
 
-    if (getpeername(fd, (struct sockaddr *)&clientAddress, &clientLength) == -1)
+    if (getpeername(fd, (struct sockaddr *)&clientAddress, &clientLength) == -1) // finds socket IP address.
     {
         fprintf(stderr, "Unable to find a valid IP Address.\n");
         strcpy(IP, "NULL");
         return;
     }
 
-    strcpy(IP, inet_ntoa(clientAddress.sin_addr));
+    strcpy(IP, inet_ntoa(clientAddress.sin_addr)); // copy address to passed string.
     return;
 }
