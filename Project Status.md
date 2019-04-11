@@ -29,6 +29,12 @@ Status Update - Ali Awari - 4/10/19 @ 4:06PM
 
 Status Update - Ali Awari - 4/10/19 @ 6:05PM
 -----------------------------------------------
-* Added argument framework to client.c
-* Added all arguments for client.c
-* Fixed error in client.c
+* Added argument framework to client.c.
+* Added all arguments for client.c.
+* Fixed error in client.c.
+
+Status Update - Ali Awari - 4/11/19 @ 1:43PM
+-----------------------------------------------
+* Being handling arguments.
+* Now send number to server as command for ease of conversion.
+* Server now sends back confirmation message.
