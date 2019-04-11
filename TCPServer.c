@@ -51,11 +51,7 @@ void acceptSocketConnection(struct server_type *server)
 
     printf("[%s+%s] %s has connected to the server.\n", GREEN, RESET, clientIP);
 
-    while (1)
-    {
-        handleClientInput(connection_fd);
-        break;
-    }
+    handleClientInput(connection_fd);
 
     if (close(connection_fd) == -1)
     {
@@ -71,7 +67,93 @@ void handleClientInput(int connection_fd)
 {
     char buffer[80];
     memset(buffer, 0, sizeof(buffer));
-    read(connection_fd, buffer, sizeof(buffer));
-    printf("%sIssued command: %s%s\n", YELLOW, buffer, RESET);
+
+    recv(connection_fd, buffer, sizeof(buffer), 0); // read() and recv() are almost interchangeable.
+
+    handleArguments(buffer);
+
+    char *success = "SERVER: Message was successfully received.\n";
+    send(connection_fd, success, strlen(success), 0); // write() and send() are almost interchangeable.
     return;
+}
+
+char *getCommandName(int n)
+{
+    switch (n)
+    {
+    case 1: // checkout
+        return "checkout";
+    case 2: // update
+        return "update";
+    case 3: // upgrade
+        return "upgrade";
+    case 4: // commit
+        return "commit";
+    case 5: // push
+        return "push";
+    case 6: // create
+        return "create";
+    case 7: // destroy
+        return "destroy";
+    case 8: // add
+        return "add";
+    case 9: // remove
+        return "remove";
+    case 10: // currentversion
+        return "currentversion";
+    case 11: // rollback
+        return "rollback";
+    case 12: // configure
+        return "configure";
+    default:
+        fprintf(stderr, "Command not found\n");
+        return NULL;
+    }
+}
+
+void handleArguments(char *arguments)
+{
+    char *tokens[4];
+    char *end;
+    int i = 0;
+
+    tokens[i] = strtok(arguments, " "); // start off tokenizer.
+    while (tokens[i] != NULL)
+    {
+        i += 1;
+        tokens[i] = strtok(NULL, " "); // loop through tokens and append them to array.
+    }
+
+    long argument = strtol(tokens[0], &end, 10);
+
+    switch (argument)
+    {
+    case 1: // checkout
+        break;
+    case 2: // update
+        break;
+    case 3: // upgrade
+        break;
+    case 4: // commit
+        break;
+    case 5: // push
+        break;
+    case 6: // create
+        break;
+    case 7: // destroy
+        break;
+    case 8: // add
+        break;
+    case 9: // remove
+        break;
+    case 10: // currentversion
+        break;
+    case 11: // rollback
+        break;
+    default:
+        fprintf(stderr, "Command not found!\n");
+        return;
+    }
+
+    printf("%sIssued command: %s%s\n", YELLOW, getCommandName(argument), RESET);
 }

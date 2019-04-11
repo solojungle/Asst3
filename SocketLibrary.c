@@ -91,7 +91,7 @@ void getIPAddress(int fd, char *IP)
 
     if (getpeername(fd, (struct sockaddr *)&clientAddress, &clientLength) == -1)
     {
-        fprintf(stderr, "Unable to get a valid IP Address.\n");
+        fprintf(stderr, "Unable to find a valid IP Address.\n");
         strcpy(IP, "NULL");
         return;
     }

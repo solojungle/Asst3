@@ -6,12 +6,15 @@ void handleArguments();
 int main(int argc, char *argv[])
 {
     handleArguments(argc, argv);
-    socketFunc();
     return 0;
 }
 
 void handleArguments(int argc, char *argv[])
 {
+
+    char string[100];                         // could segfault. (Need to dynamically allocate if function is needed).
+    memset(string, '\0', sizeof(char) * 100); // need to memset, or else you get junk characters.
+
     if (argc < 2)
     {
         fprintf(stderr, "Not enough arguments.\n");
@@ -33,6 +36,8 @@ void handleArguments(int argc, char *argv[])
             fprintf(stderr, "Usage: %s checkout <project name>\n", argv[0]);
             exit(EXIT_FAILURE);
         }
+
+        strcpy(string, "1"); // Convert name to number (easier on server end).
     }
     else if (strcmp(argv[1], "update") == 0)
     {
@@ -127,16 +132,35 @@ void handleArguments(int argc, char *argv[])
         fprintf(stderr, "Command not found\n");
         exit(EXIT_FAILURE);
     }
+
+    if (strcmp(argv[1], "configure") == 0) // JUST FOR NOW TO PREVENT NULL.
+    {
+        printf("THIS COMMAND IS ONLY FOR CLIENT.\n");
+        return;
+    }
+
+    int i = 2;
+    while (argv[i] != NULL)
+    {
+        string[strlen(string)] = ' ';
+        string[strlen(string) + 1] = '\0'; // Works without this line, but added just to make sure it's portable.
+        strcat(string, argv[i]);
+        i += 1;
+    }
+
+    socketFunc(string);
+
+    return;
 }
 
 #define PORT 9418
-void socketFunc()
+void socketFunc(char *argument)
 {
     struct server_type server; // declare struct.
     struct sockaddr_in address;
     int sock = 0, valread;
     struct sockaddr_in serv_addr;
-    char *hello = "Hello from client";
+
     char buffer[1024] = {0};
 
     initializeSocket(&server);
@@ -158,9 +182,11 @@ void socketFunc()
         printf("\nConnection Failed \n");
         exit(EXIT_FAILURE);
     }
-    send(server.socket_fd, hello, strlen(hello), 0);
+
+    send(server.socket_fd, argument, strlen(argument), 0);
     printf("Message sent\n");
-    // valread = read(sock, buffer, 1024);
-    // printf("%s\n", buffer);
+
+    recv(server.socket_fd, buffer, sizeof(buffer), 0);
+    printf("%s\n", buffer);
     return;
 }

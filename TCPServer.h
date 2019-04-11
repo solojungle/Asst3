@@ -6,5 +6,6 @@
  **/
 void acceptSocketConnection();
 void handleClientInput();
+void handleArguments();
 
 #endif /* _TCPSERVER_h */
