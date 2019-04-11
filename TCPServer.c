@@ -13,15 +13,15 @@ int main(int argc, char *argv[])
     initializeSocket(&server); // create socket, then check to see if socket has failed.
 
     // initialize values for sockaddr_in.
-    socketAddress.sin_family = AF_INET;
-    socketAddress.sin_addr.s_addr = htonl(INADDR_ANY); // binds the socket to all available interfaces (not just "localhost").
+    socketAddress.sin_family = AF_INET;                // AF_INET is an address family that is used to designate the type of addresses that your socket can communicate with.
+    socketAddress.sin_addr.s_addr = htonl(INADDR_ANY); // INADDR_ANY binds the socket to all available interfaces (not just "localhost").
     socketAddress.sin_port = htons(PORT);              // set to port number (default 9418).
 
     setSocketOptions(&server); // prevent socket from failing to bind.
 
     bindSocket(&server, socketAddress); // bind socket to address, then check to see if socket has failed.
 
-    listenSocket(&server, socketAddress, BACKLOG, PORT); // begin to listen on socket, check for failure.
+    listenSocket(&server, socketAddress, BACKLOG); // begin to listen on socket, check for failure.
 
     while (1) // begin accepting server connections.
     {
@@ -31,6 +31,13 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+/**
+ *  acceptSocketConnection()
+ *  @params: server_type *, struct that contains the server file descriptor.
+ *  @returns: void.
+ *  @comments: function is passed the server file descriptor which is currently listening, accepts a client
+ * connection, and passes a new file descriptor to client input handler, when handler returns, closes client connection.
+ **/
 void acceptSocketConnection(struct server_type *server)
 {
     int connection_fd;
@@ -38,7 +45,7 @@ void acceptSocketConnection(struct server_type *server)
     struct sockaddr_in clientAddress;
 
     clientLength = sizeof(clientAddress);
-    connection_fd = accept(server->socket_fd, (struct sockaddr *)&clientAddress, &clientLength);
+    connection_fd = accept(server->socket_fd, (struct sockaddr *)&clientAddress, &clientLength); // create new fd for client connection.
 
     if (connection_fd == -1)
     {
@@ -46,12 +53,12 @@ void acceptSocketConnection(struct server_type *server)
         return;
     }
 
-    char clientIP[20];
+    char clientIP[20];                     // holds ip address.
     getIPAddress(connection_fd, clientIP); // client's ip address for better logs.
 
     printf("[%s+%s] %s has connected to the server.\n", GREEN, RESET, clientIP);
 
-    handleClientInput(connection_fd);
+    handleClientInput(connection_fd); // pass client fd to handler.
 
     if (close(connection_fd) == -1)
     {
@@ -63,6 +70,13 @@ void acceptSocketConnection(struct server_type *server)
     return;
 }
 
+/**
+ *  handleClientInput()
+ *  @params: int, a file descriptor to a client connection.
+ *  @returns: void.
+ *  @comments: function is passed a file descriptor to a connection, reads data (commands) sent from a client,
+ * passes data to argument handler, sends a message back to client to confirm reception of data.
+ **/
 void handleClientInput(int connection_fd)
 {
     char buffer[80];
@@ -72,11 +86,20 @@ void handleClientInput(int connection_fd)
 
     handleArguments(buffer);
 
-    char *success = "SERVER: Message was successfully received.\n";
+    char *success = "SERVER: Data was received.\n";
     send(connection_fd, success, strlen(success), 0); // write() and send() are almost interchangeable.
     return;
 }
 
+// @TODO: ADD getCommandName() TO LIBRARY FILE. (.WTF library), CASE 12, IS ONLY ADDED TO BE USED W/ CLIENT.C
+// WHEN PORTED TO LIB.
+
+/**
+ *  getCommandName()
+ *  @params: int, the argument number given from client connection.
+ *  @returns: char *, converted name of argument.
+ *  @comments: function is passed argument number, returns argument name.
+ **/
 char *getCommandName(int n)
 {
     switch (n)
@@ -111,6 +134,12 @@ char *getCommandName(int n)
     }
 }
 
+/**
+ *  handleArguments()
+ *  @params: char *, data (string) recieved from client.
+ *  @returns: void.
+ *  @comments: function tokenizes string, checks to see if argument exists and executes them.
+ **/
 void handleArguments(char *arguments)
 {
     char *tokens[4];
