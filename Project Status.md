@@ -43,3 +43,12 @@ Status Update - Ali Awari - 4/11/19 @ 5:32PM
 -----------------------------------------------
 * Added comments to server/socket files.
 * Removed redundant line from getIPAddress()
+
+Status Update - Dennis Kager - 4/12/19 @ 4:14AM
+------------------------------------------------
+* Worked on Client.c to make input handling more consistent with the server's input handling
+* Ignore some of the commented-out code in Client.c at the top, I will get rid of it soon!
+* Added multi-threading capabilities in TCPServer.c, allowing it to handle many connections at once without blocking
+* There is a bug where the port number displayed is not the actual port (9418) but can be connected through as 9418. I tried to fix it but had no luck.
+* Updated function declarations so it wasn't bugging out the IDE
+* Once we start adding functionality to our commands, I will add mutexes to avoid race conditions and undefined behavior from code being accessed between threads before any one of them can finish the command (i.e. One thread updating a file at the same time as another thread is trying to delete it)
