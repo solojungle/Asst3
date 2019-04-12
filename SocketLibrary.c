@@ -1,11 +1,11 @@
 #include "SocketLibrary.h" // general socket functions
 
-/**
+/*
  *  initializeSocket()
  *  @params: server_type *, struct that contains the server file descriptor.
  *  @returns: void.
  *  @comments: function creates and initializes a socket.
- **/
+ */
 void initializeSocket(struct server_type *server)
 {
     server->socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -19,14 +19,14 @@ void initializeSocket(struct server_type *server)
     return;
 }
 
-/**
+/*
  *  bindSocket()
  *  @params:
  *      server_type *, struct that contains the server file descriptor.
  *      sockaddr_in, struct that contains address family, IP address, and port number of socket.
  *  @returns: void.
  *  @comments: function binds a socket to an available IP address and port number.
- **/
+ */
 void bindSocket(struct server_type *server, struct sockaddr_in server_addr)
 {
     if (bind(server->socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) // bind socket, then check to see if socket has failed.
@@ -35,11 +35,11 @@ void bindSocket(struct server_type *server, struct sockaddr_in server_addr)
         handleServerClose(-1); // shutdown server correctly.
     }
 
-    printf("Socket has %ssuccessfully%s binded to an address...\n", GREEN, RESET);
+    printf("Socket has %ssuccessfully%s bound to an address...\n", GREEN, RESET);
     return;
 }
 
-/**
+/*
  *  listenSocket()
  *  @params:
  *      server_type *, struct that contains the server file descriptor.
@@ -47,7 +47,7 @@ void bindSocket(struct server_type *server, struct sockaddr_in server_addr)
  *      int, int that defines the maximum length to which the queue of pending connections for sockfd may grow.
  *  @returns: void.
  *  @comments: function sets socket to start listening for connections.
- **/
+ */
 void listenSocket(struct server_type *server, struct sockaddr_in server_addr, int BACKLOG)
 {
     if (listen(server->socket_fd, BACKLOG) == -1) // begin to listen on socket, check for failure.
@@ -70,12 +70,12 @@ void listenSocket(struct server_type *server, struct sockaddr_in server_addr, in
 
 // @TODO: FIGURE OUT IF WE NEED THIS FUNCTION INSTEAD OF USING EXIT()
 
-/**
+/*
  *  handleServerClose()
  *  @params: int, -1 for failure, anything else for success.
  *  @returns: void.
  *  @comments: function that handles the closing of all threads (server).
- **/
+ */
 void handleServerClose(int signal)
 {
     printf("%sServer shutting down, closing all threads.%s\n", RED, RESET);
@@ -86,13 +86,13 @@ void handleServerClose(int signal)
     exit(EXIT_SUCCESS);
 }
 
-/**
+/*
  *  setSocketOptions()
  *  @params: server_type *, struct that contains the socket file descriptor.
  *  @returns: void.
  *  @comments: function currently only sets socket option REUSEADDR, which allows socket to use same port
  * with different IP addresses.
- **/
+ */
 void setSocketOptions(struct server_type *server)
 {
     /**
@@ -121,14 +121,14 @@ void setSocketOptions(struct server_type *server)
     return;
 }
 
-/**
+/*
  *  getIPAddress()
  *  @params:
  *      int, file descriptor of connection.
  *      char *, string to hold IP address.
  *  @returns: void.
  *  @comments: strcpy() the IP address of passed file descriptor into given string.
- **/
+ */
 void getIPAddress(int fd, char *IP)
 {
     struct sockaddr_in clientAddress;

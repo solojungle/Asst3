@@ -2,13 +2,15 @@
 #include <unistd.h>        // close()
 #include "SocketLibrary.h" // socket functions
 #include "TCPServer.h"     // forward declarations
+#include <pthread.h>       // thread library
+#include <string.h>
 
 int main(int argc, char *argv[])
 {
     struct server_type server;        // declare struct.
     struct sockaddr_in socketAddress; // sockaddr_in, is struct that holds an IP socket address format.
-    int PORT = 9418;                  // default port number.
     int BACKLOG = 5;                  // maximum amount of pending connections that can be enqueued for a socket.
+    const int PORT = 9418;            // default port number.
 
     initializeSocket(&server); // create socket, then check to see if socket has failed.
 
@@ -43,30 +45,33 @@ void acceptSocketConnection(struct server_type *server)
     int connection_fd;
     socklen_t clientLength;
     struct sockaddr_in clientAddress;
+    pthread_t thread_id;
+    thread_args *args;
 
-    clientLength = sizeof(clientAddress);
-    connection_fd = accept(server->socket_fd, (struct sockaddr *)&clientAddress, &clientLength); // create new fd for client connection.
+    while(1){
+        clientLength = sizeof(clientAddress);
+        connection_fd = accept(server->socket_fd, (struct sockaddr *)&clientAddress, &clientLength); // create new fd for client connection. Wait here for client to connect
 
-    if (connection_fd == -1)
-    {
-        fprintf(stderr, "Server has %sfailed%s to accept a connection.\nFILE: %s \nLINE: %d\n", RED, RESET, __FILE__, __LINE__);
-        return;
+        if (connection_fd == -1)
+        {
+            fprintf(stderr, "Server has %sfailed%s to accept a connection.\nFILE: %s \nLINE: %d\n", RED, RESET, __FILE__, __LINE__);
+            return;
+        }
+
+        char clientIP[20];                     // holds ip address.
+        getIPAddress(connection_fd, clientIP); // client's ip address for better logs.
+        
+        args -> connection_fd = connection_fd;
+        args -> clientIP = (char*)malloc(strlen(clientIP) * sizeof(char));
+        strcpy(args -> clientIP, clientIP);
+
+        printf("[%s+%s] %s has connected to the server.\n", GREEN, RESET, clientIP);
+
+        pthread_create(&thread_id, NULL, clientThread, (void*)args);
     }
-
-    char clientIP[20];                     // holds ip address.
-    getIPAddress(connection_fd, clientIP); // client's ip address for better logs.
-
-    printf("[%s+%s] %s has connected to the server.\n", GREEN, RESET, clientIP);
-
-    handleClientInput(connection_fd); // pass client fd to handler.
-
-    if (close(connection_fd) == -1)
-    {
-        fprintf(stderr, "Server has %sfailed%s to close a connection.\nFILE: %s \nLINE: %d\n", RED, RESET, __FILE__, __LINE__);
-        handleServerClose(-1); // shutdown server correctly.
-    }
-
-    printf("[%s-%s] %s has disconnected from the server.\n", RED, RESET, clientIP);
+    pthread_join(thread_id, NULL);
+   // printf("[%s-%s] %s has disconnected from the server.\n", RED, RESET, clientIP);
+    
     return;
 }
 
@@ -79,15 +84,16 @@ void acceptSocketConnection(struct server_type *server)
  **/
 void handleClientInput(int connection_fd)
 {
-    char buffer[80];
-    memset(buffer, 0, sizeof(buffer));
+    char buffer[256];
+    memset(buffer, 0, sizeof(buffer) - 1);
+    char *success = "SERVER: Data was received";   // even if command doesn't exist need to confirm connection was valid.
 
     recv(connection_fd, buffer, sizeof(buffer), 0); // read() and recv() are almost interchangeable.
 
     handleArguments(buffer); // checks to see if argument exists and executes them.
 
-    char *success = "SERVER: Data was received.\n";   // even if command doesn't exist need to confirm connection was valid.
     send(connection_fd, success, strlen(success), 0); // write() and send() are almost interchangeable.
+    
     return;
 }
 
@@ -124,12 +130,14 @@ char *getCommandName(int n)
         return "remove";
     case 10: // currentversion
         return "currentversion";
-    case 11: // rollback
+    case 11: // history
+        return "history";
+    case 12: // rollback
         return "rollback";
-    case 12: // configure
+    case 13: // configure
         return "configure";
     default:
-        fprintf(stderr, "Command not found\n");
+        fprintf(stderr, "Error: Command not found\n");
         return NULL;
     }
 }
@@ -157,32 +165,55 @@ void handleArguments(char *arguments)
 
     switch (argument)
     {
-    case 1: // checkout
-        break;
-    case 2: // update
-        break;
-    case 3: // upgrade
-        break;
-    case 4: // commit
-        break;
-    case 5: // push
-        break;
-    case 6: // create
-        break;
-    case 7: // destroy
-        break;
-    case 8: // add
-        break;
-    case 9: // remove
-        break;
-    case 10: // currentversion
-        break;
-    case 11: // rollback
-        break;
-    default:
-        fprintf(stderr, "Command not found!\n");
+        case 1: // checkout
+            break;
+        case 2: // update
+            break;
+        case 3: // upgrade
+            break;
+        case 4: // commit
+            break;
+        case 5: // push
+            break;
+        case 6: // create
+            break;
+        case 7: // destroy
+            break;
+        case 8: // add
+            break;
+        case 9: // remove
+            break;
+        case 10: // currentversion
+            break;
+        case 11: // history
+            break;
+        case 12: // rollback
+            break;
+        case 13: // configure
+            break;
+        default:
+            fprintf(stderr, "Error: Command not found\n");
         return;
     }
 
     printf("%sIssued command: %s%s\n", YELLOW, getCommandName(argument), RESET);
+}
+
+void* clientThread(void* args){
+    thread_args *arguments = args;
+    int connection_fd = arguments -> connection_fd;
+    char *clientIP = (char*)malloc(strlen(arguments -> clientIP) * sizeof(char));
+    strcpy(clientIP, arguments -> clientIP);
+    
+    handleClientInput(connection_fd); // pass client fd to handler.
+
+    if (close(connection_fd) == -1)
+    {
+        fprintf(stderr, "Server has %sfailed%s to close a connection.\nFILE: %s \nLINE: %d\n", RED, RESET, __FILE__, __LINE__);
+        handleServerClose(-1); // shutdown server correctly.
+    }
+    
+    printf("[%s-%s] %s has disconnected from the server.\n", RED, RESET, clientIP);
+    
+    return NULL;
 }

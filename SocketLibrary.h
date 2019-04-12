@@ -19,11 +19,11 @@ struct server_type
     int socket_fd;
 };
 
-extern void initializeSocket();
-extern void bindSocket();
-extern void listenSocket();
-extern void handleServerClose();
-extern void setSocketOptions();
-extern void getIPAddress();
+extern void initializeSocket(struct server_type *);
+extern void bindSocket(struct server_type *, struct sockaddr_in);
+extern void listenSocket(struct server_type *, struct sockaddr_in, int);
+extern void handleServerClose(int);
+extern void setSocketOptions(struct server_type *);
+extern void getIPAddress(int, char *);
 
 #endif /* _SOCKETLIBRARY_h */

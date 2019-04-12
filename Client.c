@@ -1,19 +1,48 @@
+#include <unistd.h> // For close()
+#define PORT 9418
 #include "SocketLibrary.h" // socket functions
 
-void socketFunc();
-void handleArguments();
+void socketFunc(char *);
+void handleArguments(int, char **);
 
 int main(int argc, char *argv[])
 {
+    /*int socket_fd;
+    struct sockaddr_in serv_addr;
+    
+    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+    
+    if (socket_fd == -1) {
+        fprintf(stderr, "Error: Client socket creation failed!\n");
+        exit(0);
+    }
+    else
+        printf("Client socket successfully created\n");
+    
+    bzero(&serv_addr, sizeof(serv_addr));
+
+    serv_addr.sin_family = AF_INET;
+    // serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    serv_addr.sin_port = htons(PORT);
+    
+    if (connect(socket_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) != 0) {
+        printf("connection with the server failed...\n");
+        fprintf(stderr, "Error: Client connection to the server failed!\n");
+        exit(0);
+    }
+    else
+        printf("Client successfully connected to the server\n");*/
+    
     handleArguments(argc, argv);
+    
     return 0;
 }
 
 void handleArguments(int argc, char *argv[])
 {
-
-    char string[100];                         // could segfault. (Need to dynamically allocate if function is needed).
-    memset(string, '\0', sizeof(char) * 100); // need to memset, or else you get junk characters.
+    char string[256];                         // could segfault. (Need to dynamically allocate if function is needed).
+    memset(string, '\0', (sizeof(string) - 1) * sizeof(char)); // need to memset, or else you get junk characters.
 
     if (argc < 2)
     {
@@ -21,15 +50,7 @@ void handleArguments(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    if (strcmp(argv[1], "configure") == 0)
-    {
-        if (argc != 4)
-        {
-            fprintf(stderr, "Usage: %s configure <IP> <port>\n", argv[0]);
-            exit(EXIT_FAILURE);
-        }
-    }
-    else if (strcmp(argv[1], "checkout") == 0)
+    if (strcmp(argv[1], "checkout") == 0)
     {
         if (argc != 3)
         {
@@ -46,6 +67,7 @@ void handleArguments(int argc, char *argv[])
             fprintf(stderr, "Usage: %s update <project name>\n", argv[0]);
             exit(EXIT_FAILURE);
         }
+        strcpy(string, "2"); // Convert name to number (easier on server end).
     }
     else if (strcmp(argv[1], "upgrade") == 0)
     {
@@ -54,6 +76,7 @@ void handleArguments(int argc, char *argv[])
             fprintf(stderr, "Usage: %s upgrade <project name>\n", argv[0]);
             exit(EXIT_FAILURE);
         }
+        strcpy(string, "3"); // Convert name to number (easier on server end).
     }
     else if (strcmp(argv[1], "commit") == 0)
     {
@@ -62,6 +85,7 @@ void handleArguments(int argc, char *argv[])
             fprintf(stderr, "Usage: %s commit <project name>\n", argv[0]);
             exit(EXIT_FAILURE);
         }
+        strcpy(string, "4"); // Convert name to number (easier on server end).
     }
     else if (strcmp(argv[1], "push") == 0)
     {
@@ -70,6 +94,7 @@ void handleArguments(int argc, char *argv[])
             fprintf(stderr, "Usage: %s push <project name>\n", argv[0]);
             exit(EXIT_FAILURE);
         }
+        strcpy(string, "5"); // Convert name to number (easier on server end).
     }
     else if (strcmp(argv[1], "create") == 0)
     {
@@ -78,6 +103,7 @@ void handleArguments(int argc, char *argv[])
             fprintf(stderr, "Usage: %s create <project name>\n", argv[0]);
             exit(EXIT_FAILURE);
         }
+        strcpy(string, "6"); // Convert name to number (easier on server end).
     }
     else if (strcmp(argv[1], "destroy") == 0)
     {
@@ -86,6 +112,7 @@ void handleArguments(int argc, char *argv[])
             fprintf(stderr, "Usage: %s destroy <project name>\n", argv[0]);
             exit(EXIT_FAILURE);
         }
+        strcpy(string, "7"); // Convert name to number (easier on server end).
     }
     else if (strcmp(argv[1], "add") == 0)
     {
@@ -94,6 +121,7 @@ void handleArguments(int argc, char *argv[])
             fprintf(stderr, "Usage: %s add <project name> <filename>\n", argv[0]);
             exit(EXIT_FAILURE);
         }
+        strcpy(string, "8"); // Convert name to number (easier on server end).
     }
     else if (strcmp(argv[1], "remove") == 0)
     {
@@ -102,6 +130,7 @@ void handleArguments(int argc, char *argv[])
             fprintf(stderr, "Usage: %s remove <project name> <filename>\n", argv[0]);
             exit(EXIT_FAILURE);
         }
+        strcpy(string, "9"); // Convert name to number (easier on server end).
     }
     else if (strcmp(argv[1], "currentversion") == 0)
     {
@@ -110,6 +139,7 @@ void handleArguments(int argc, char *argv[])
             fprintf(stderr, "Usage: %s currentversion <project name>\n", argv[0]);
             exit(EXIT_FAILURE);
         }
+        strcpy(string, "10"); // Convert name to number (easier on server end).
     }
     else if (strcmp(argv[1], "history") == 0)
     {
@@ -118,6 +148,7 @@ void handleArguments(int argc, char *argv[])
             fprintf(stderr, "Usage: %s history <project name>\n", argv[0]);
             exit(EXIT_FAILURE);
         }
+        strcpy(string, "11"); // Convert name to number (easier on server end).
     }
     else if (strcmp(argv[1], "rollback") == 0)
     {
@@ -126,6 +157,16 @@ void handleArguments(int argc, char *argv[])
             fprintf(stderr, "Usage: %s rollback <project name> <version>\n", argv[0]);
             exit(EXIT_FAILURE);
         }
+        strcpy(string, "12"); // Convert name to number (easier on server end).
+    }
+    else if (strcmp(argv[1], "configure") == 0)
+    {
+        if (argc != 4)
+        {
+            fprintf(stderr, "Usage: %s configure <IP> <port>\n", argv[0]);
+            exit(EXIT_FAILURE);
+        }
+        strcpy(string, "13"); // Convert name to number (easier on server end).
     }
     else
     {
@@ -133,12 +174,13 @@ void handleArguments(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    if (strcmp(argv[1], "configure") == 0) // JUST FOR NOW TO PREVENT NULL.
+    /*if (strcmp(argv[1], "configure") == 0) // JUST FOR NOW TO PREVENT NULL.
     {
         printf("THIS COMMAND IS ONLY FOR CLIENT.\n");
         return;
-    }
+    }*/
 
+    
     int i = 2;
     while (argv[i] != NULL)
     {
@@ -153,14 +195,12 @@ void handleArguments(int argc, char *argv[])
     return;
 }
 
-#define PORT 9418
 void socketFunc(char *argument)
 {
     struct server_type server; // declare struct.
-    struct sockaddr_in address;
-    int sock = 0, valread;
+   // struct sockaddr_in address;
+    // int sock = 0, valread;
     struct sockaddr_in serv_addr;
-
     char buffer[1024] = {0};
 
     initializeSocket(&server);
@@ -172,13 +212,13 @@ void socketFunc(char *argument)
 
     if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) // Convert IPv4 and IPv6 addresses from text to binary form
     {
-        printf("\nInvalid address/ Address not supported \n");
+        printf("\nInvalid address/Address not supported \n");
         exit(EXIT_FAILURE);
     }
 
     if (connect(server.socket_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
-        printf("\nConnection Failed \n");
+        printf("\nConnection Failed\n");
         exit(EXIT_FAILURE);
     }
 
@@ -187,5 +227,10 @@ void socketFunc(char *argument)
 
     recv(server.socket_fd, buffer, sizeof(buffer), 0);
     printf("%s\n", buffer);
+    
+    close(server.socket_fd);
+    
+    printf("Successfully disconnected from server\n\n");
+    
     return;
 }
