@@ -1,6 +1,6 @@
 CFLAGS= -g
 
-all: compileServer compileClient clean
+all: compileServer compileClient clean run
 
 compileServer: TCPServer.c SocketLibrary.o TCPServer.h
 	gcc $(CFLAGS) -o WTF TCPServer.c SocketLibrary.o
@@ -14,3 +14,6 @@ SocketLibrary.o: SocketLibrary.c SocketLibrary.h
 clean:
 	-rm -f *.o
 	-rm -f *.h.gch
+
+run:
+	./WTF 9418

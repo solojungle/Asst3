@@ -61,17 +61,9 @@ Status Update - Dennis Kager - 4/12/19 @ 12:01AM
 * Added handling in Client.c so that the client will try to connect to the server every three seconds until it can either connect or is interuppted with CTRL + C
 * Modified makefile because now to run TCPServer, you have to supply it with a port number, such as ./WTF 9418
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Status Update - Ali Awari - 4/13/19 @ 10:55AM
+------------------------------------------------
+* Removed handleServerClose()
+* Formatting
+* Editted printfs
+* Changed string memset in client.c

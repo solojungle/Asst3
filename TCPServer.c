@@ -9,40 +9,42 @@
 
 struct server_type server; // declare struct.
 pthread_t threads[3000];   // holds thread identification numbers
-int thread_index = 0;     // holds current index of thread
+int thread_index = 0;      // holds current index of thread
 int all_connection_fd[3000];
 int fd_index = 0;
 
 int main(int argc, char *argv[])
 {
-    if (argc == 2){
-        struct sockaddr_in socketAddress;               // sockaddr_in, is struct that holds an IP socket address format.
-        int BACKLOG = 5;                                // maximum amount of pending connections that can be enqueued for a socket.
-        const int PORT = strtol(argv[1], NULL, 10);    // default port number.
-        signal(SIGINT, sigIntHandler); // Handles when CTRL + C is pressed
-        
-        initializeSocket(&server); // create socket, then check to see if socket has failed.
-
-        // initialize values for sockaddr_in.
-        socketAddress.sin_family = AF_INET;                // AF_INET is an address family that is used to designate the type of addresses that your socket can communicate with.
-        socketAddress.sin_addr.s_addr = htonl(INADDR_ANY); // INADDR_ANY binds the socket to all available interfaces (not just "localhost").
-        socketAddress.sin_port = htons(PORT);              // set to port number (default 9418).
-
-        setSocketOptions(&server); // prevent socket from failing to bind.
-
-        bindSocket(&server, socketAddress); // bind socket to address, then check to see if socket has failed.
-
-        listenSocket(&server, socketAddress, BACKLOG); // begin to listen on socket, check for failure.
-
-        while (1) // begin accepting server connections.
-        {
-            acceptSocketConnection(&server); // handling a connection request.
-        }
-        
-        atexit(clean); // Clean upon exiting
-    }
-    else
+    if (argc == 1)
+    {
         fprintf(stderr, "Error: Please supply a port number!\n");
+        return -1;
+    }
+
+    struct sockaddr_in socketAddress;           // sockaddr_in, is struct that holds an IP socket address format.
+    int BACKLOG = 5;                            // maximum amount of pending connections that can be enqueued for a socket.
+    const int PORT = strtol(argv[1], NULL, 10); // given port number.
+    signal(SIGINT, sigIntHandler);              // handles when CTRL + C is pressed.
+
+    initializeSocket(&server); // create socket, then check to see if socket has failed.
+
+    // initialize values for sockaddr_in.
+    socketAddress.sin_family = AF_INET;                // AF_INET is an address family that is used to designate the type of addresses that your socket can communicate with.
+    socketAddress.sin_addr.s_addr = htonl(INADDR_ANY); // INADDR_ANY binds the socket to all available interfaces (not just "localhost").
+    socketAddress.sin_port = htons(PORT);              // set to port number (default 9418).
+
+    setSocketOptions(&server); // prevent socket from failing to bind.
+
+    bindSocket(&server, socketAddress); // bind socket to address, then check to see if socket has failed.
+
+    listenSocket(&server, socketAddress, BACKLOG); // begin to listen on socket, check for failure.
+
+    while (1) // begin accepting server connections.
+    {
+        acceptSocketConnection(&server); // handling a connection request.
+    }
+
+    atexit(clean); // clean upon exiting.
 
     return 0;
 }
@@ -62,7 +64,8 @@ void acceptSocketConnection(struct server_type *server)
     pthread_t thread_id;
     thread_args *args;
 
-    while(1){ // Loop to keep accepting connections
+    while (1) // loop to keep accepting connections.
+    {
         clientLength = sizeof(clientAddress);
         connection_fd = accept(server->socket_fd, (struct sockaddr *)&clientAddress, &clientLength); // create new fd for client connection. Wait here for client to connect
 
@@ -71,26 +74,26 @@ void acceptSocketConnection(struct server_type *server)
             fprintf(stderr, "Server has %sfailed%s to accept a connection.\nFILE: %s \nLINE: %d\n", RED, RESET, __FILE__, __LINE__);
             return;
         }
-        
+
         all_connection_fd[fd_index] = connection_fd;
         ++fd_index;
 
         char clientIP[20];                     // holds ip address.
         getIPAddress(connection_fd, clientIP); // client's ip address for better logs.
-        
-        args -> connection_fd = connection_fd;
-        args -> clientIP = (char*)malloc(strlen(clientIP) * sizeof(char));
-        strcpy(args -> clientIP, clientIP);
+
+        args->connection_fd = connection_fd;
+        args->clientIP = (char *)malloc(strlen(clientIP) * sizeof(char));
+        strcpy(args->clientIP, clientIP);
 
         printf("[%s+%s] %s has connected to the server.\n", GREEN, RESET, clientIP);
-        
+
         threads[thread_index] = thread_id; // Update log of threads
-        ++thread_index; // Increment thread counter
-        
-        pthread_create(&thread_id, NULL, clientThread, (void*)args); // Create new thread for new client
+        ++thread_index;                    // Increment thread counter
+
+        pthread_create(&thread_id, NULL, clientThread, (void *)args); // Create new thread for new client
     }
     pthread_join(thread_id, NULL); // Wait on threads
-    
+
     return;
 }
 
@@ -100,22 +103,23 @@ void acceptSocketConnection(struct server_type *server)
  *  @returns: NULL.
  *  @comments: function is used to handle each client's requests in a different thread than the main thread.
  **/
-void* clientThread(void* args){ // Thread function where clients get re-directed to
+void *clientThread(void *args) // thread function where clients get re-directed to.
+{
     thread_args *arguments = args;
-    int connection_fd = arguments -> connection_fd;
-    char *clientIP = (char*)malloc(strlen(arguments -> clientIP) * sizeof(char));
-    strcpy(clientIP, arguments -> clientIP);
-    
+    int connection_fd = arguments->connection_fd;
+    char *clientIP = (char *)malloc(strlen(arguments->clientIP) * sizeof(char));
+    strcpy(clientIP, arguments->clientIP);
+
     handleClientInput(connection_fd); // pass client fd to handler.
-    
+
     if (close(connection_fd) == -1)
     {
         fprintf(stderr, "Server has %sfailed%s to close a connection.\nFILE: %s \nLINE: %d\n", RED, RESET, __FILE__, __LINE__);
-        handleServerClose(-1); // shutdown server correctly.
+        exit(EXIT_FAILURE); // shutdown server correctly.
     }
-    
+
     printf("[%s-%s] %s has disconnected from the server.\n", RED, RESET, clientIP);
-    
+
     return NULL;
 }
 
@@ -130,14 +134,14 @@ void handleClientInput(int connection_fd)
 {
     char buffer[256];
     memset(buffer, 0, sizeof(buffer) - 1);
-    char *success = "SERVER: Data was received\n";   // even if command doesn't exist need to confirm connection was valid.
+    char *success = "Server has received the data.\n"; // even if command doesn't exist need to confirm connection was valid.
 
     recv(connection_fd, buffer, sizeof(buffer), 0); // read() and recv() are almost interchangeable.
 
     handleArguments(buffer); // checks to see if argument exists and executes them.
 
     send(connection_fd, success, strlen(success), 0); // write() and send() are almost interchangeable.
-    
+
     return;
 }
 
@@ -209,60 +213,67 @@ void handleArguments(char *arguments)
 
     switch (argument)
     {
-        case 1: // checkout
-            break;
-        case 2: // update
-            break;
-        case 3: // upgrade
-            break;
-        case 4: // commit
-            break;
-        case 5: // push
-            break;
-        case 6: // create
-            break;
-        case 7: // destroy
-            break;
-        case 8: // add
-            break;
-        case 9: // remove
-            break;
-        case 10: // currentversion
-            break;
-        case 11: // history
-            break;
-        case 12: // rollback
-            break;
-        case 13: // configure
-            break;
-        default:
-            fprintf(stderr, "Error: Command not found\n");
+    case 1: // checkout
+        break;
+    case 2: // update
+        break;
+    case 3: // upgrade
+        break;
+    case 4: // commit
+        break;
+    case 5: // push
+        break;
+    case 6: // create
+        break;
+    case 7: // destroy
+        break;
+    case 8: // add
+        break;
+    case 9: // remove
+        break;
+    case 10: // currentversion
+        break;
+    case 11: // history
+        break;
+    case 12: // rollback
+        break;
+    case 13: // configure
+        break;
+    default:
+        fprintf(stderr, "Error: Command not found\n");
         return;
     }
 
     printf("%sIssued command: %s%s\n", YELLOW, getCommandName(argument), RESET);
 }
 
+//
 //         CTRL + C PROCEDURES
 //=======================================
+void clean(void) // instructions to be run before exiting.
+{
+    char *clientDisconnectMSG = "\nServer Disconnected.\n";
 
-void clean(void){ // Instructions to be run before exiting
-    char *clientDisconnectMSG = "\nServer Disconnected\n";
-    for(int i = 0; i < fd_index; i++){ // Send disconnect message to all clients on server
+    for (int i = 0; i < fd_index; i++) // send disconnect message to all clients on server.
+    {
         send(all_connection_fd[i], clientDisconnectMSG, strlen(clientDisconnectMSG), 0);
     }
-    
+
     if (close(server.socket_fd) == 0)
-        printf("\nSocket closed\n");
+        printf("\nSocket closed.\n");
     else
         fprintf(stderr, "\nError in closing socket!\n");
-    
-    for(int i = 0; i <= thread_index; i++){
+
+    printf("%sServer shutting down, closing all threads.%s\n", RED, RESET);
+
+    for (int i = 0; i <= thread_index; i++)
+    {
         pthread_kill(threads[i], SIGKILL);
     }
 }
 
-void sigIntHandler(int sig){ // Handler when CTRL + C is pressed
-    clean(); // Calls cleaning instructions for terminating
-    exit(0); // Exit
+void sigIntHandler(int sig) // handler when CTRL + C is pressed.
+{
+    clean(); // calls cleaning instructions for terminating.
+    exit(0); // exit.
 }

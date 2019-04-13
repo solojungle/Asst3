@@ -8,14 +8,14 @@ void handleArguments(int, char **);
 int main(int argc, char *argv[])
 {
     handleArguments(argc, argv);
-    
+
     return 0;
 }
 
 void handleArguments(int argc, char *argv[])
 {
-    char string[256];                         // could segfault. (Need to dynamically allocate if function is needed).
-    memset(string, '\0', (sizeof(string) - 1) * sizeof(char)); // need to memset, or else you get junk characters.
+    char string[256];                       // could segfault. (Need to dynamically allocate if function is needed).
+    memset(string, '\0', (sizeof(string))); // need to memset, or else you get junk characters.
 
     if (argc < 2)
     {
@@ -153,7 +153,6 @@ void handleArguments(int argc, char *argv[])
         return;
     }*/
 
-    
     int i = 2;
     while (argv[i] != NULL)
     {
@@ -176,8 +175,9 @@ void socketFunc(char *argument)
     // struct sockaddr_in address;
     // int sock = 0, valread;
     struct sockaddr_in serv_addr;
-    
-    while (conn_status == 0) {
+
+    while (conn_status == 0)
+    {
         initializeSocket(&server);
         memset(&serv_addr, '0', sizeof(serv_addr));
 
@@ -196,21 +196,22 @@ void socketFunc(char *argument)
             printf("Connection Failed! Trying again...\n\n");
             sleep(3); // Wait for 3 seconds before attempting to connect
         }
-        else{
+        else
+        {
             conn_status = 1;
-            printf("Succesfully connected to server\n");
+            printf("Connection to server is %ssuccessful%s.\n", GREEN, RESET);
         }
     }
 
     send(server.socket_fd, argument, strlen(argument), 0);
-    printf("Message sent\n");
+    printf("Message sent.\n");
 
     recv(server.socket_fd, buffer, sizeof(buffer), 0);
     printf("%s", buffer);
-    
+
     close(server.socket_fd);
-    
-    printf("Successfully disconnected from server\n\n");
-    
+
+    printf("Disconnected from server.\n\n");
+
     return;
 }

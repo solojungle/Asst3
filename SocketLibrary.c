@@ -12,7 +12,7 @@ void initializeSocket(struct server_type *server)
     if (server->socket_fd == -1) // create socket, then check to see if socket has failed.
     {
         fprintf(stderr, "Socket has %sfailed%s to be created.\nFILE: %s \nLINE: %d\n", RED, RESET, __FILE__, __LINE__);
-        handleServerClose(-1); // shutdown server correctly.
+        exit(EXIT_FAILURE); // shutdown server correctly.
     }
 
     printf("Socket has been %ssuccessfully%s created...\n", GREEN, RESET);
@@ -32,7 +32,7 @@ void bindSocket(struct server_type *server, struct sockaddr_in server_addr)
     if (bind(server->socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) // bind socket, then check to see if socket has failed.
     {
         fprintf(stderr, "Socket has %sfailed%s to bind to an address.\nFILE: %s \nLINE: %d\n", RED, RESET, __FILE__, __LINE__);
-        handleServerClose(-1); // shutdown server correctly.
+        exit(EXIT_FAILURE); // shutdown server correctly.
     }
 
     printf("Socket has %ssuccessfully%s bound to an address...\n", GREEN, RESET);
@@ -53,7 +53,7 @@ void listenSocket(struct server_type *server, struct sockaddr_in server_addr, in
     if (listen(server->socket_fd, BACKLOG) == -1) // begin to listen on socket, check for failure.
     {
         fprintf(stderr, "Socket has %sfailed%s to listen on port: %i.\nFILE: %s \nLINE: %d\n", RED, RESET, server_addr.sin_port, __FILE__, __LINE__);
-        handleServerClose(-1); // shutdown server correctly.
+        exit(EXIT_FAILURE); // shutdown server correctly.
     }
 
     if (server_addr.sin_port == 9418) // check to see if port is default.
@@ -66,24 +66,6 @@ void listenSocket(struct server_type *server, struct sockaddr_in server_addr, in
     }
 
     return;
-}
-
-// @TODO: FIGURE OUT IF WE NEED THIS FUNCTION INSTEAD OF USING EXIT()
-
-/*
- *  handleServerClose()
- *  @params: int, -1 for failure, anything else for success.
- *  @returns: void.
- *  @comments: function that handles the closing of all threads (server).
- */
-void handleServerClose(int signal)
-{
-    printf("%sServer shutting down, closing all threads.%s\n", RED, RESET);
-    if (signal == -1)
-    {
-        exit(EXIT_FAILURE);
-    }
-    exit(EXIT_SUCCESS);
 }
 
 /*
