@@ -7,33 +7,6 @@ void handleArguments(int, char **);
 
 int main(int argc, char *argv[])
 {
-    /*int socket_fd;
-    struct sockaddr_in serv_addr;
-    
-    socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-    
-    if (socket_fd == -1) {
-        fprintf(stderr, "Error: Client socket creation failed!\n");
-        exit(0);
-    }
-    else
-        printf("Client socket successfully created\n");
-    
-    bzero(&serv_addr, sizeof(serv_addr));
-
-    serv_addr.sin_family = AF_INET;
-    // serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    serv_addr.sin_port = htons(PORT);
-    
-    if (connect(socket_fd, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) != 0) {
-        printf("connection with the server failed...\n");
-        fprintf(stderr, "Error: Client connection to the server failed!\n");
-        exit(0);
-    }
-    else
-        printf("Client successfully connected to the server\n");*/
-    
     handleArguments(argc, argv);
     
     return 0;
@@ -197,36 +170,43 @@ void handleArguments(int argc, char *argv[])
 
 void socketFunc(char *argument)
 {
+    int conn_status = 0;
+    char buffer[1024] = {0};
     struct server_type server; // declare struct.
-   // struct sockaddr_in address;
+    // struct sockaddr_in address;
     // int sock = 0, valread;
     struct sockaddr_in serv_addr;
-    char buffer[1024] = {0};
+    
+    while (conn_status == 0) {
+        initializeSocket(&server);
+        memset(&serv_addr, '0', sizeof(serv_addr));
 
-    initializeSocket(&server);
+        serv_addr.sin_family = AF_INET;
+        serv_addr.sin_port = htons(PORT);
 
-    memset(&serv_addr, '0', sizeof(serv_addr));
+        if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) // Convert IPv4 and IPv6 addresses from text to binary form
+        {
+            printf("\nInvalid address/Address not supported \n");
+            exit(EXIT_FAILURE);
+        }
 
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
-
-    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) // Convert IPv4 and IPv6 addresses from text to binary form
-    {
-        printf("\nInvalid address/Address not supported \n");
-        exit(EXIT_FAILURE);
-    }
-
-    if (connect(server.socket_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-    {
-        printf("\nConnection Failed\n");
-        exit(EXIT_FAILURE);
+        if (connect(server.socket_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+        {
+            conn_status = 0;
+            printf("Connection Failed! Trying again...\n\n");
+            sleep(3); // Wait for 3 seconds before attempting to connect
+        }
+        else{
+            conn_status = 1;
+            printf("Succesfully connected to server\n");
+        }
     }
 
     send(server.socket_fd, argument, strlen(argument), 0);
     printf("Message sent\n");
 
     recv(server.socket_fd, buffer, sizeof(buffer), 0);
-    printf("%s\n", buffer);
+    printf("%s", buffer);
     
     close(server.socket_fd);
     
