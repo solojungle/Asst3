@@ -4,14 +4,10 @@
 #include <fcntl.h>    // open()
 #include <errno.h>    // errno
 #include <stdio.h>    // stderr
-#include <unistd.h>   // close()
+#include <stdlib.h>   // free()
+#include <string.h>   // memset, strlen()
+#include <unistd.h>   // close(), write()
 #include <sys/stat.h> // mkdir()
-
-struct config_addr // used to hold ip:port from config file.
-{
-    char *ip_address;
-    unsigned int port;
-};
 
 /**
  *  Forward Declarations

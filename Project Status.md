@@ -74,3 +74,7 @@ Status Update - Ali Awari - 4/13/19 @ 4:43PM
 * Edited makefile to reflect this addition
 * General formatting
 * Fixed bug where, server would display converted port number instead of orignal.
+
+Status Update - Ali Awari - 4/13/19 @ 6:22PM
+------------------------------------------------
+* Configure will create a config.txt file inside .wtf/ directory.

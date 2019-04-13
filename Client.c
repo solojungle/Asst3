@@ -141,9 +141,8 @@ void handleArguments(int argc, char *argv[])
             exit(EXIT_FAILURE);
         }
 
-        // make dir, and files.
-        makeDirectory();
-        createConfig();
+        makeDirectory();                // create directory if it doesn't already exist.
+        createConfig(argv[2], argv[3]); // overwrite config if it already exists.
 
         strcpy(string, "13"); // Convert name to number (easier on server end).
     }

@@ -47,14 +47,16 @@ void makeDirectory()
 }
 
 /**
- *  createConfigure()
+ *  createConfig()
  *  @params:
- *  @returns:
- *  @comments:
+ *      char *, IP Address of server to which socket will connect to.
+ *      char *, port to which socket will use to connect to server.
+ *  @returns: void.
+ *  @comments: creates a config.txt file inside .wtf/ and writes address:port.
  **/
-void createConfig()
+void createConfig(char *address, char *port)
 {
-    int fd;
+    int fd; // file descriptor of config file to write to.
 
     /**
      *  will overwrite previous config when called, if previous exists.
@@ -62,5 +64,24 @@ void createConfig()
      *  (S_IRWXU | S_IRWXG | S_IRWXO), sets access perms.
      **/
     fd = open(".wtf/config.txt", (O_RDWR | O_CREAT | O_TRUNC), (S_IRWXU | S_IRWXG | S_IRWXO));
-    close(fd);
+    int stringLength = strlen(address) + strlen(port) + 1; // + 1 is for \0 char.
+
+    char string[stringLength]; // initalize char array + null character.
+    memset(string, '\0', stringLength); // remove junk values.
+
+    // creating (address + ':' + port).
+    strcpy(string, address);
+    strcat(string, ":");
+    strcat(string, port);
+
+    if (write(fd, string, stringLength) != stringLength)
+    {
+        fprintf(stderr, "Error: there was an error writing to config.\n");
+    }
+    else
+    {
+        printf("%s, has been successfully added to the config file.\n", string);
+    }
+
+    close(fd); // close file to free up resources.
 }
