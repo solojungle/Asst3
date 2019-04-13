@@ -13,11 +13,11 @@ void makeDirectory()
     {
         if (errno == EEXIST)
         {
-            fprintf(stderr, "Error: .wtf directory already exists\n");
+            fprintf(stderr, "%sWarning%s: .wtf directory already exists.\n", YELLOW, RESET);
         }
         else
         {
-            fprintf(stderr, "Error: mkdir() has failed to create .wtf folder.\n");
+            fprintf(stderr, "%sError%s: mkdir() has failed to create .wtf folder.\n", RED, RESET);
         }
     }
     else
@@ -29,11 +29,11 @@ void makeDirectory()
     {
         if (errno == EEXIST)
         {
-            fprintf(stderr, "Error: objects directory already exists\n");
+            fprintf(stderr, "%sWarning%s: objects directory already exists.\n", YELLOW, RESET);
         }
         else
         {
-            fprintf(stderr, "Error: mkdir() has failed to create objects folder.\n");
+            fprintf(stderr, "%sError%s: mkdir() has failed to create objects folder.\n", RED, RESET);
         }
 
         return;
@@ -76,11 +76,11 @@ void createConfig(char *address, char *port)
 
     if (write(fd, string, stringLength) != stringLength)
     {
-        fprintf(stderr, "Error: there was an error writing to config.\n");
+        fprintf(stderr, "%sError%s: there was an error writing to config.\n", RED, RESET);
     }
     else
     {
-        printf("%s, has been successfully added to the config file.\n", string);
+        printf("%s%s%s, has been %ssuccessfully%s added to the config file.\n", GREEN, string, RESET, GREEN, RESET);
     }
 
     close(fd); // close file to free up resources.

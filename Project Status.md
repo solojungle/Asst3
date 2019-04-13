@@ -78,3 +78,4 @@ Status Update - Ali Awari - 4/13/19 @ 4:43PM
 Status Update - Ali Awari - 4/13/19 @ 6:22PM
 ------------------------------------------------
 * Configure will create a config.txt file inside .wtf/ directory.
+* Added colors to warning messages.
