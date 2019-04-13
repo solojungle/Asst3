@@ -18,6 +18,6 @@
  *  Forward Declarations
  **/
 extern void makeDirectory();
-extern void createConfig();
+extern void createConfig(char *, char *);
 
 #endif /* _WTFCOMMANDS_h */
