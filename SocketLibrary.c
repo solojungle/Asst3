@@ -56,14 +56,8 @@ void listenSocket(struct server_type *server, struct sockaddr_in server_addr, in
         exit(EXIT_FAILURE); // shutdown server correctly.
     }
 
-    if (server_addr.sin_port == 9418) // check to see if port is default.
-    {
-        printf("Server is now listening on port: %s%i%s (default).\n\n", GREEN, server_addr.sin_port, RESET);
-    }
-    else
-    {
-        printf("Server is now listening on port: %s%i%s.\n\n", GREEN, server_addr.sin_port, RESET);
-    }
+    // htons(), changes number based on endianess on machine, must ntohs() to display original port.
+    printf("Server is now listening on port: %s%i%s.\n\n", GREEN, ntohs(server_addr.sin_port), RESET);
 
     return;
 }

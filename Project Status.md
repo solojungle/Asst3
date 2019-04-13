@@ -67,3 +67,10 @@ Status Update - Ali Awari - 4/13/19 @ 10:55AM
 * Formatting
 * Editted printfs
 * Changed string memset in client.c
+
+Status Update - Ali Awari - 4/13/19 @ 4:43PM
+------------------------------------------------
+* Added WTFCommands, configure creates a .wtf directory, and config file.
+* Edited makefile to reflect this addition
+* General formatting
+* Fixed bug where, server would display converted port number instead of orignal.

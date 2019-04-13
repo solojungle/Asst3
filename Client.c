@@ -1,6 +1,7 @@
-#include <unistd.h> // For close()
 #define PORT 9418
+#include <unistd.h>        // For close()
 #include "SocketLibrary.h" // socket functions
+#include "WTFCommands.h"   // core functions
 
 void socketFunc(char *);
 void handleArguments(int, char **);
@@ -139,6 +140,11 @@ void handleArguments(int argc, char *argv[])
             fprintf(stderr, "Usage: %s configure <IP> <port>\n", argv[0]);
             exit(EXIT_FAILURE);
         }
+
+        // make dir, and files.
+        makeDirectory();
+        createConfig();
+
         strcpy(string, "13"); // Convert name to number (easier on server end).
     }
     else

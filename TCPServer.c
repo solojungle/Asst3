@@ -24,7 +24,8 @@ int main(int argc, char *argv[])
     struct sockaddr_in socketAddress;           // sockaddr_in, is struct that holds an IP socket address format.
     int BACKLOG = 5;                            // maximum amount of pending connections that can be enqueued for a socket.
     const int PORT = strtol(argv[1], NULL, 10); // given port number.
-    signal(SIGINT, sigIntHandler);              // handles when CTRL + C is pressed.
+
+    signal(SIGINT, sigIntHandler); // handles when CTRL + C is pressed.
 
     initializeSocket(&server); // create socket, then check to see if socket has failed.
 
