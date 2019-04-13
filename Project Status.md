@@ -52,3 +52,26 @@ Status Update - Dennis Kager - 4/12/19 @ 4:14AM
 * There is a bug where the port number displayed is not the actual port (9418) but can be connected through as 9418. I tried to fix it but had no luck.
 * Updated function declarations so it wasn't bugging out the IDE
 * Once we start adding functionality to our commands, I will add mutexes to avoid race conditions and undefined behavior from code being accessed between threads before any one of them can finish the command (i.e. One thread updating a file at the same time as another thread is trying to delete it)
+
+Status Update - Dennis Kager - 4/12/19 @ 12:01AM
+------------------------------------------------
+* Added some global variables in TCPServer.c for handling SIGINT exit procedures
+* Added a signal handler in TCPServer.c that will catch a SIGINT signal (CTRL + C) and properly close things down
+* Added an outbound message to all clients connected to the server so when CTRL + C is pressed and all clients get disconnected, they will all recieve a message saying that the server has been disconnected
+* Added handling in Client.c so that the client will try to connect to the server every three seconds until it can either connect or is interuppted with CTRL + C
+* Modified makefile because now to run TCPServer, you have to supply it with a port number, such as ./WTF 9418
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
