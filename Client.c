@@ -18,7 +18,7 @@ void handleArguments(int argc, char *argv[])
     char string[256];                       // could segfault. (Need to dynamically allocate if function is needed).
     memset(string, '\0', (sizeof(string))); // need to memset, or else you get junk characters.
 
-    if (argc < 2)
+    if (argc < 2) // check to make an argument was passed.
     {
         fprintf(stderr, "Not enough arguments.\n");
         exit(EXIT_FAILURE);
@@ -152,12 +152,6 @@ void handleArguments(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    /*if (strcmp(argv[1], "configure") == 0) // JUST FOR NOW TO PREVENT NULL.
-    {
-        printf("THIS COMMAND IS ONLY FOR CLIENT.\n");
-        return;
-    }*/
-
     int i = 2;
     while (argv[i] != NULL)
     {
@@ -174,6 +168,10 @@ void handleArguments(int argc, char *argv[])
 
 void socketFunc(char *argument)
 {
+
+    struct server_info *serverInfo = getServerConfig(); // get IP + Port from config.
+    free(serverInfo);                                   // free it afterwards.
+
     int conn_status = 0;
     char buffer[1024] = {0};
     struct server_type server; // declare struct.

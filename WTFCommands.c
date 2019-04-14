@@ -66,7 +66,7 @@ void createConfig(char *address, char *port)
     fd = open(".wtf/config.txt", (O_RDWR | O_CREAT | O_TRUNC), (S_IRWXU | S_IRWXG | S_IRWXO));
     int stringLength = strlen(address) + strlen(port) + 1; // + 1 is for \0 char.
 
-    char string[stringLength]; // initalize char array + null character.
+    char string[stringLength];          // initalize char array + null character.
     memset(string, '\0', stringLength); // remove junk values.
 
     // creating (address + ':' + port).
@@ -84,4 +84,39 @@ void createConfig(char *address, char *port)
     }
 
     close(fd); // close file to free up resources.
+    return;
 }
+
+// the only way to return a pointer to a new object that didn't exist before the function was called is to use malloc.
+struct server_info *getServerConfig()
+{
+    struct server_info *temporary = malloc(sizeof(struct server_info));
+
+    int fd = open(".wtf/config.txt", O_RDONLY); // get fd for config file.
+    if (fd == -1)
+    {
+        fprintf(stderr, "Error: open has failed to retrieve the config file.\n");
+        return NULL;
+    }
+
+    int fileLength = lseek(fd, 0, SEEK_END); // find files length with lseek()
+    if (fileLength == -1)
+    {
+        fprintf(stderr, "Error: lseek failed to find end of file.\n");
+        return NULL;
+    }
+
+    lseek(fd, 0, SEEK_SET); // reset file offset
+
+    char buffer[fileLength];          // create array (buffer) to hold file.
+    memset(buffer, '\0', fileLength); // remove junk memory.
+    read(fd, buffer, fileLength);     // place string into buffer.
+
+    temporary->IP = strtok(buffer, ":"); // start off tokenizer, get IP.
+    temporary->port = strtok(NULL, " "); // get port.
+
+    close(fd); // close file.
+
+    return temporary; // return malloc'd struct that contains address + port.
+}
+// NEED TO READ FROM ./wtf/config.txt, RETURN address/ip struct?

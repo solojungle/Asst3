@@ -14,10 +14,16 @@
 #define GREEN "\033[0;32m"
 #define YELLOW "\033[0;33m"
 
-/**
- *  Forward Declarations
- **/
+struct server_info
+{
+    char *IP;
+    char *port;
+};
+
+// Forward Declarations:
+
 extern void makeDirectory();
 extern void createConfig(char *, char *);
+extern struct server_info *getServerConfig();
 
 #endif /* _WTFCOMMANDS_h */

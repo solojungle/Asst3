@@ -83,7 +83,7 @@ void acceptSocketConnection(struct server_type *server)
         getIPAddress(connection_fd, clientIP); // client's ip address for better logs.
 
         args->connection_fd = connection_fd;
-        args->clientIP = (char *)malloc(strlen(clientIP) * sizeof(char));
+        args->clientIP = (char *)malloc(strlen(clientIP) * sizeof(char)); // do we have to malloc here? we can use strlen()?
         strcpy(args->clientIP, clientIP);
 
         printf("[%s+%s] %s has connected to the server.\n", GREEN, RESET, clientIP);
