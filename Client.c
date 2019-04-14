@@ -170,7 +170,13 @@ void socketFunc(char *argument)
 {
 
     struct server_info *serverInfo = getServerConfig(); // get IP + Port from config.
-    free(serverInfo);                                   // free it afterwards.
+    if (serverInfo == NULL)                             // an error occured reading the config file.
+    {
+        fprintf(stderr, "Error: Server information is NULL.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    free(serverInfo); // free it afterwards.
 
     int conn_status = 0;
     char buffer[1024] = {0};
