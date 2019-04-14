@@ -119,4 +119,3 @@ struct server_info *getServerConfig()
 
     return temporary; // return malloc'd struct that contains address + port.
 }
-// NEED TO READ FROM ./wtf/config.txt, RETURN address/ip struct?
