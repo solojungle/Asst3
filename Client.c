@@ -173,6 +173,7 @@ void socketFunc(char *argument)
     if (serverInfo == NULL)                             // an error occured reading the config file.
     {
         fprintf(stderr, "Error: Server information is NULL.\n");
+        free(serverInfo);
         exit(EXIT_FAILURE);
     }
 
