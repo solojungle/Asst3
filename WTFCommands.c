@@ -112,8 +112,9 @@ struct server_info *getServerConfig()
     memset(buffer, '\0', fileLength); // remove junk memory.
     read(fd, buffer, fileLength);     // place string into buffer.
 
-    temporary->IP = strtok(buffer, ":"); // start off tokenizer, get IP.
-    temporary->port = strtok(NULL, " "); // get port.
+    temporary->IP = strtok(buffer, ":");                   // start off tokenizer, get IP.
+    char *end;                                             // holds stores the address of the first invalid character
+    temporary->port = strtol(strtok(NULL, " "), &end, 10); // get port.
 
     close(fd); // close file.
 

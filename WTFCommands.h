@@ -17,7 +17,7 @@
 struct server_info
 {
     char *IP;
-    char *port;
+    long port;
 };
 
 // Forward Declarations:

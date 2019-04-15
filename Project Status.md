@@ -83,3 +83,7 @@ Status Update - Ali Awari - 4/13/19 @ 6:22PM
 Status Update - Ali Awari - 4/13/19 @ 11:32PM
 ------------------------------------------------
 * getServerConfig() now retrieves config port + address, will be used in socketFunc().
+
+Status Update - Ali Awari - 4/15/19 @ 1:58AM
+------------------------------------------------
+* server_info now has a long type instead of char * for port number.
