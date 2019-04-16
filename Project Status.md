@@ -99,3 +99,9 @@ Status Update - Ali Awari - 4/16/19 @ 10:59AM
 * Added comments to function in Client.c
 * Configure will return in ifelse now instead of waiting til the end to return.
 * Updated makefile.
+
+Status Update - Ali Awari - 4/16/19 @ 5:03PM
+------------------------------------------------
+* Began work on sending files.
+* Added -lpthread to makefile to remove pthread_create error.
+* Editted for-loops to remove -stdc99 error message.

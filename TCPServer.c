@@ -254,8 +254,9 @@ void handleArguments(char *arguments)
 void clean(void) // instructions to be run before exiting.
 {
     char *clientDisconnectMSG = "\nServer Disconnected.\n";
+    int i;
 
-    for (int i = 0; i < fd_index; i++) // send disconnect message to all clients on server.
+    for (i = 0; i < fd_index; i++) // send disconnect message to all clients on server.
     {
         send(all_connection_fd[i], clientDisconnectMSG, strlen(clientDisconnectMSG), 0);
     }
@@ -267,7 +268,7 @@ void clean(void) // instructions to be run before exiting.
 
     printf("%sServer shutting down, closing all threads.%s\n", RED, RESET);
 
-    for (int i = 0; i <= thread_index; i++)
+    for (i = 0; i <= thread_index; i++)
     {
         pthread_kill(threads[i], SIGKILL);
     }

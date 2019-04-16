@@ -2,9 +2,11 @@
 #define _SOCKETLIBRARY_h
 
 #include <stdio.h>      // stderr
+#include <fcntl.h>      // O_RDONLY
 #include <stdlib.h>     // exit(), EXIT_FAILURE, EXIT_SUCCESS
 #include <signal.h>     // signal()
 #include <string.h>     // strcpy(), memset()
+#include <unistd.h>     // read(), lseek()
 #include <arpa/inet.h>  // inet_ntoa()
 #include <netinet/in.h> // htonl(), htons(), sockaddr_in
 #include <sys/socket.h> // socket(), bind(), AF_INET
@@ -17,6 +19,15 @@
 struct server_type
 {
     int socket_fd;
+};
+
+struct files_type
+{
+    int fileLength;
+    int nameLength;
+    char *filename;
+    char *file;
+    struct files_type *next;
 };
 
 extern void initializeSocket(struct server_type *);

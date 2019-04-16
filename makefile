@@ -4,7 +4,7 @@ all: compileServer compileClient clean run
 
 # compiles server includes, socket_lib, and core_commands
 compileServer: TCPServer.c TCPServer.h SocketLibrary.o WTFCommands.o
-	gcc $(CFLAGS) -o WTF TCPServer.c SocketLibrary.o WTFCommands.o
+	gcc $(CFLAGS) -o WTF TCPServer.c SocketLibrary.o WTFCommands.o -lpthread
 
 # compiles client includes, socket_lib, and core_commands
 compileClient: Client.c Client.h SocketLibrary.o WTFCommands.o

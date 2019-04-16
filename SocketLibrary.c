@@ -120,3 +120,48 @@ void getIPAddress(int fd, char *IP)
     strcpy(IP, inet_ntoa(clientAddress.sin_addr)); // copy address to passed string.
     return;
 }
+
+// creates a fresh node.
+struct files_type *initializeFileNode(char *filename, int nameLength, char *file, int fileLength)
+{
+    struct files_type *temporary = (struct files_type *)malloc(sizeof(struct files_type));
+    temporary->file = malloc(strlen(file));
+    temporary->filename = malloc(strlen(filename));
+
+    memset(temporary->file, '\0', strlen(file));
+    memset(temporary->filename, '\0', strlen(filename));
+
+    strcpy(temporary->file, file);
+    strcpy(temporary->filename, filename);
+
+    temporary->file = file;
+    temporary->fileLength = fileLength;
+    temporary->next = NULL;
+
+    return temporary;
+}
+
+// void sendFile(char **files)
+// {
+//     int index = 0;
+//     int fd;
+//     int fileLength;
+//     int nameLength;
+
+//     while (files[index] != NULL)
+//     {
+//         char *fileName = basename(files[index]); // get filename.
+//         nameLength = strlen(fileName);           // get length of filename.
+
+//         fd = open(files[index], O_RDONLY);   // open file from array.
+//         fileLength = lseek(fd, 0, SEEK_END); // find files length with lseek().
+//         lseek(fd, 0, SEEK_SET);              // reset file offset.
+
+//         char buffer[fileLength];          // create array (buffer) to hold file.
+//         memset(buffer, '\0', fileLength); // remove junk memory.
+//         read(fd, buffer, fileLength);     // place file into buffer.
+
+//         close(fd);
+//         index += 1;
+//     }
+// }
