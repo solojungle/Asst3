@@ -93,3 +93,9 @@ Status Update - Ali Awari - 4/15/19 @ 2:01PM
 * Fixed bug in Client.c, serverInfo->IP wasn't malloc'd so it would lose it's value.
 * In Client.c Instead of creating a new socket for each connection attempt, it will just create one, and check multiple times.
 * Now message for which IP socket is connecting to is displayed.
+
+Status Update - Ali Awari - 4/16/19 @ 10:59AM
+------------------------------------------------
+* Added comments to function in Client.c
+* Configure will return in ifelse now instead of waiting til the end to return.
+* Updated makefile.

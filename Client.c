@@ -1,10 +1,5 @@
-#define PORT 9418
-#include <unistd.h>        // For close()
-#include "SocketLibrary.h" // socket functions
-#include "WTFCommands.h"   // core functions
-
-void sendArgument(char *);
-void handleArguments(int, char **);
+#include "WTFCommands.h" // core functions
+#include "Client.h"      // client functions
 
 int main(int argc, char *argv[])
 {
@@ -13,6 +8,15 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+/**
+ *  handleArguments()
+ *  @params:
+ *      int, the amount of arguments
+ *      char **, the console arguments
+ *  @returns: void.
+ *  @comments: handles the given arguments to client, will convert them to a number and send to server
+ * excluding configure which is a client sided command.
+ **/
 void handleArguments(int argc, char *argv[])
 {
     char string[256];                       // could segfault. (Need to dynamically allocate if function is needed).
@@ -144,17 +148,13 @@ void handleArguments(int argc, char *argv[])
         makeDirectory();                // create directory if it doesn't already exist.
         createConfig(argv[2], argv[3]); // overwrite config if it already exists.
 
-        strcpy(string, "13"); // Convert name to number (easier on server end).
+        return; // configure is client sided.
+        // strcpy(string, "13"); // Convert name to number (easier on server end).
     }
     else
     {
         fprintf(stderr, "Command not found\n");
         exit(EXIT_FAILURE);
-    }
-
-    if (strcmp(string, "13") == 0) // Configure is client sided.
-    {
-        return;
     }
 
     int i = 2;
@@ -171,6 +171,13 @@ void handleArguments(int argc, char *argv[])
     return;
 }
 
+/**
+ *  sendArgument()
+ *  @params: char *, the string version of argument.
+ *  @returns: void.
+ *  @comments: attempts a connection to server, sends argument to server,
+ * tries every 3 seconds, on user to cancel.
+ **/
 void sendArgument(char *argument)
 {
     struct server_info *serverInfo = getServerConfig(); // get IP + Port from config.
