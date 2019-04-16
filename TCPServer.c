@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 {
     if (argc == 1)
     {
-        fprintf(stderr, "Error: Please supply a port number!\n");
+        fprintf(stderr, "%sError%s: please supply a port number!\n", RED, RESET);
         return -1;
     }
 
@@ -186,7 +186,7 @@ char *getCommandName(int n)
     case 13: // configure
         return "configure";
     default:
-        fprintf(stderr, "Error: Command not found\n");
+        fprintf(stderr, "%sError%s: command not found\n", RED, RESET);
         return NULL;
     }
 }
@@ -241,7 +241,7 @@ void handleArguments(char *arguments)
     case 13: // configure
         break;
     default:
-        fprintf(stderr, "Error: Command not found\n");
+        fprintf(stderr, "%sError%s: command not found\n", RED, RESET);
         return;
     }
 
@@ -263,7 +263,7 @@ void clean(void) // instructions to be run before exiting.
     if (close(server.socket_fd) == 0)
         printf("\nSocket closed.\n");
     else
-        fprintf(stderr, "\nError in closing socket!\n");
+        fprintf(stderr, "\n%sError:%s closing socket has failed.\n", RED, RESET);
 
     printf("%sServer shutting down, closing all threads.%s\n", RED, RESET);
 
