@@ -135,7 +135,7 @@ void handleClientInput(int connection_fd)
 {
     char buffer[256];
     memset(buffer, 0, sizeof(buffer) - 1);
-    char *success = "Server has received the data.\n"; // even if command doesn't exist need to confirm connection was valid.
+    char *success = "OK.\n"; // even if command doesn't exist need to confirm connection was valid.
 
     recv(connection_fd, buffer, sizeof(buffer), 0); // read() and recv() are almost interchangeable.
 

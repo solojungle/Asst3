@@ -226,8 +226,7 @@ void sendArgument(char *argument)
     }
 
     send(server.socket_fd, argument, strlen(argument), 0);
-    printf("Message sent.\n");
-
+    printf("\nWaiting for server response... ");
     recv(server.socket_fd, buffer, sizeof(buffer), 0);
     printf("%s", buffer);
 
