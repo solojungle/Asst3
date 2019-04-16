@@ -87,3 +87,9 @@ Status Update - Ali Awari - 4/13/19 @ 11:32PM
 Status Update - Ali Awari - 4/15/19 @ 1:58AM
 ------------------------------------------------
 * server_info now has a long type instead of char * for port number.
+
+Status Update - Ali Awari - 4/15/19 @ 2:01PM
+------------------------------------------------
+* Fixed bug in Client.c, serverInfo->IP wasn't malloc'd so it would lose it's value.
+* In Client.c Instead of creating a new socket for each connection attempt, it will just create one, and check multiple times.
+* Now message for which IP socket is connecting to is displayed.

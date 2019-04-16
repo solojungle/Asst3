@@ -87,22 +87,33 @@ void createConfig(char *address, char *port)
     return;
 }
 
-// the only way to return a pointer to a new object that didn't exist before the function was called is to use malloc.
+/**
+ *  getServerConfig()
+ *  @returns: struct server_info *, holds server IP + Address copied from config.txt.
+ *  @comments: retrieves the IP address + port from config file. Must free both the struct and IP char *.
+ **/
 struct server_info *getServerConfig()
 {
-    struct server_info *temporary = malloc(sizeof(struct server_info));
+    // the only way to return a pointer to a new object that didn't exist before the function was called is to use malloc.
+    struct server_info *temporary = malloc(sizeof(struct server_info)); // malloc struct to retain info outside function scope.
+
+    if (temporary == NULL)
+    {
+        fprintf(stderr, "%sError%s: malloc failed to allocate memory for struct server_info.\n", RED, RESET);
+        return NULL;
+    }
 
     int fd = open(".wtf/config.txt", O_RDONLY); // get fd for config file.
     if (fd == -1)
     {
-        fprintf(stderr, "Error: open has failed to retrieve the config file.\n");
+        fprintf(stderr, "%sError%s: open has failed to retrieve the config file.\n", RED, RESET);
         return NULL;
     }
 
-    int fileLength = lseek(fd, 0, SEEK_END); // find files length with lseek()
+    int fileLength = lseek(fd, 0, SEEK_END); // find files length with lseek().
     if (fileLength == -1)
     {
-        fprintf(stderr, "Error: lseek failed to find end of file.\n");
+        fprintf(stderr, "%sError%s: lseek failed to find end of file.\n", RED, RESET);
         return NULL;
     }
 
@@ -112,8 +123,19 @@ struct server_info *getServerConfig()
     memset(buffer, '\0', fileLength); // remove junk memory.
     read(fd, buffer, fileLength);     // place string into buffer.
 
-    temporary->IP = strtok(buffer, ":");                   // start off tokenizer, get IP.
-    char *end;                                             // holds stores the address of the first invalid character
+    char *tempIP = strtok(buffer, ":"); // start off tokenizer, get IP.
+
+    temporary->IP = malloc(strlen(tempIP)); // when creating pointers inside functions, you must malloc to keep outside of scope.
+
+    if (temporary->IP == NULL)
+    {
+        fprintf(stderr, "%sError%s: malloc failed to allocate memory for server_info->IP attribute.\n", RED, RESET);
+        return NULL;
+    }
+
+    memset(temporary->IP, '\0', strlen(tempIP));           // remove junk chars.
+    strcpy(temporary->IP, tempIP);                         // copy string to malloc.
+    char *end;                                             // holds stores the address of the first invalid character.
     temporary->port = strtol(strtok(NULL, " "), &end, 10); // get port.
 
     close(fd); // close file.

@@ -3,7 +3,7 @@
 #include "SocketLibrary.h" // socket functions
 #include "WTFCommands.h"   // core functions
 
-void socketFunc(char *);
+void sendArgument(char *);
 void handleArguments(int, char **);
 
 int main(int argc, char *argv[])
@@ -152,6 +152,11 @@ void handleArguments(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
+    if (strcmp(string, "13") == 0) // Configure is client sided.
+    {
+        return;
+    }
+
     int i = 2;
     while (argv[i] != NULL)
     {
@@ -161,54 +166,54 @@ void handleArguments(int argc, char *argv[])
         i += 1;
     }
 
-    socketFunc(string);
+    sendArgument(string);
 
     return;
 }
 
-void socketFunc(char *argument)
+void sendArgument(char *argument)
 {
-
     struct server_info *serverInfo = getServerConfig(); // get IP + Port from config.
-    if (serverInfo == NULL)                             // an error occured reading the config file.
+
+    if (serverInfo == NULL) // an error occured reading the config file.
     {
         fprintf(stderr, "Error: Server information is NULL.\n");
         free(serverInfo);
         exit(EXIT_FAILURE);
     }
 
-    free(serverInfo); // free it afterwards.
-
-    int conn_status = 0;
-    char buffer[1024] = {0};
-    struct server_type server; // declare struct.
     // struct sockaddr_in address;
     // int sock = 0, valread;
+    int connection_status = 0;
+    char buffer[1024] = {0};
+    struct server_type server; // declare struct.
     struct sockaddr_in serv_addr;
 
-    while (conn_status == 0)
+    initializeSocket(&server);
+    memset(&serv_addr, '0', sizeof(serv_addr));
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(serverInfo->port);
+
+    if (inet_pton(AF_INET, serverInfo->IP, &serv_addr.sin_addr) <= 0) // Convert IPv4 and IPv6 addresses from text to binary form.
     {
-        initializeSocket(&server);
-        memset(&serv_addr, '0', sizeof(serv_addr));
+        printf("\nInvalid address/Address not supported \n");
+        exit(EXIT_FAILURE);
+    }
 
-        serv_addr.sin_family = AF_INET;
-        serv_addr.sin_port = htons(PORT);
+    printf("Attempting connection to %s, port %li...\n", serverInfo->IP, serverInfo->port); // show which port is being connected to.
 
-        if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) // Convert IPv4 and IPv6 addresses from text to binary form
-        {
-            printf("\nInvalid address/Address not supported \n");
-            exit(EXIT_FAILURE);
-        }
-
+    while (connection_status == 0)
+    {
         if (connect(server.socket_fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
         {
-            conn_status = 0;
+            connection_status = 0;
             printf("Connection Failed! Trying again...\n\n");
             sleep(3); // Wait for 3 seconds before attempting to connect
         }
         else
         {
-            conn_status = 1;
+            connection_status = 1;
             printf("Connection to server is %ssuccessful%s.\n", GREEN, RESET);
         }
     }
@@ -223,5 +228,7 @@ void socketFunc(char *argument)
 
     printf("Disconnected from server.\n\n");
 
+    free(serverInfo->IP); // free IP malloc.
+    free(serverInfo);     // free struct afterwards.
     return;
 }
