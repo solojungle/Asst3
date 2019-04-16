@@ -107,3 +107,7 @@ Status Update - Ali Awari - 4/16/19 @ 5:03PM
 * Editted for-loops to remove -stdc99 error message.
 * Fixed iLab bug where args needed to be malloc'd.
 * TODO: PLACE FREE() IN CORRECT PLACE FOR ARGS.
+
+Status Update - Dennis Kager - 4/16/19 @ 7:55PM
+------------------------------------------------
+* Fixed a segfault caused by a loop which kills threads stepping out of bounds
