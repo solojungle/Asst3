@@ -63,7 +63,7 @@ void acceptSocketConnection(struct server_type *server)
     socklen_t clientLength;
     struct sockaddr_in clientAddress;
     pthread_t thread_id;
-    thread_args *args;
+    thread_args *args = malloc(sizeof(thread_args));
 
     while (1) // loop to keep accepting connections.
     {
@@ -80,6 +80,7 @@ void acceptSocketConnection(struct server_type *server)
         ++fd_index;
 
         char clientIP[20];                     // holds ip address.
+        memset(clientIP, '\0', 20);            // remove junk.
         getIPAddress(connection_fd, clientIP); // client's ip address for better logs.
 
         args->connection_fd = connection_fd;
