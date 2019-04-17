@@ -1,4 +1,5 @@
 #include "SocketLibrary.h" // general socket functions
+#include <libgen.h>
 
 /*
  *  initializeSocket()
@@ -125,43 +126,102 @@ void getIPAddress(int fd, char *IP)
 struct files_type *initializeFileNode(char *filename, int nameLength, char *file, int fileLength)
 {
     struct files_type *temporary = (struct files_type *)malloc(sizeof(struct files_type));
+
     temporary->file = malloc(strlen(file));
     temporary->filename = malloc(strlen(filename));
-
     memset(temporary->file, '\0', strlen(file));
     memset(temporary->filename, '\0', strlen(filename));
-
     strcpy(temporary->file, file);
     strcpy(temporary->filename, filename);
 
-    temporary->file = file;
+    temporary->nameLength = nameLength;
     temporary->fileLength = fileLength;
+
     temporary->next = NULL;
 
     return temporary;
 }
 
-// void sendFile(char **files)
-// {
-//     int index = 0;
-//     int fd;
-//     int fileLength;
-//     int nameLength;
+struct files_type *append(struct files_type *new, struct files_type *root)
+{
+    if (root == NULL) // if first node.
+    {
+        return new;
+    }
 
-//     while (files[index] != NULL)
-//     {
-//         char *fileName = basename(files[index]); // get filename.
-//         nameLength = strlen(fileName);           // get length of filename.
+    struct files_type *cursor = root;
+    while (cursor->next != NULL) // find end.
+    {
+        cursor = cursor->next;
+    }
 
-//         fd = open(files[index], O_RDONLY);   // open file from array.
-//         fileLength = lseek(fd, 0, SEEK_END); // find files length with lseek().
-//         lseek(fd, 0, SEEK_SET);              // reset file offset.
+    cursor->next = new; // append to list.
 
-//         char buffer[fileLength];          // create array (buffer) to hold file.
-//         memset(buffer, '\0', fileLength); // remove junk memory.
-//         read(fd, buffer, fileLength);     // place file into buffer.
+    return root;
+}
 
-//         close(fd);
-//         index += 1;
-//     }
-// }
+void createFileList(char **files)
+{
+
+    if (files == NULL) // check to see if input is NULL.
+    {
+        fprintf(stderr, "%sError%s: files is NULL.\n", RED, RESET);
+        return;
+    }
+
+    if (files[0] == NULL) // see if files is empty.
+    {
+        fprintf(stderr, "%sError%s: files is empty.\n", RED, RESET);
+        return;
+    }
+
+    int index = 0;  // number of files.
+    int fd;         // general fd for files.
+    int fileLength; // length of file.
+    int nameLength; // file name length.
+
+    struct files_type *root = NULL; // create starting point.
+
+    while (files[index][0] != '\0') // files[index] will almost never be NULL, must compare to it's first char files[index][0].
+    {
+        fd = open(files[index], O_RDONLY); // open file from array.
+        if (fd == -1)
+        {
+            fprintf(stderr, "%sError%s: File at \"%s\" does not exist.\n", RED, RESET, files[index]);
+            return;
+        }
+
+        char *fileName = basename(files[index]); // get filename.
+        nameLength = strlen(fileName);           // get length of filename.
+
+        fileLength = lseek(fd, 0, SEEK_END); // find files length with lseek().
+        if (fileLength == -1)
+        {
+            fprintf(stderr, "%sError%s: lseek failed to find end of file.\n", RED, RESET);
+            return;
+        }
+
+        lseek(fd, 0, SEEK_SET); // reset file offset.
+
+        if (fileLength == 0)
+        {
+            fprintf(stderr, "%sError%s: File at \"%s\" is empty.\n", RED, RESET, files[index]);
+            return;
+        }
+
+        char buffer[fileLength];          // create array (buffer) to hold file.
+        memset(buffer, '\0', fileLength); // remove junk memory.
+        read(fd, buffer, fileLength);     // place file into buffer.
+
+        root = append(initializeFileNode(fileName, nameLength, buffer, fileLength), root); // create list.
+
+        close(fd);  // close file.
+        index += 1; // increment cursor.
+    }
+
+    while (root != NULL) // DEBUGGING, print all nodes
+    {
+        printf("%i:%s:%i:%s\n", root->nameLength, root->filename, root->fileLength, root->file);
+        root = root->next;
+    }
+}

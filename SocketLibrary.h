@@ -36,5 +36,8 @@ extern void listenSocket(struct server_type *, struct sockaddr_in, int);
 extern void handleServerClose(int);
 extern void setSocketOptions(struct server_type *);
 extern void getIPAddress(int, char *);
+extern void createFileList(char **);
+extern struct files_type *append(struct files_type *, struct files_type *);
+extern struct files_type *initializeFileNode(char *, int, char *, int);
 
 #endif /* _SOCKETLIBRARY_h */

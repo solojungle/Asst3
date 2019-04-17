@@ -119,9 +119,19 @@ struct server_info *getServerConfig()
 
     lseek(fd, 0, SEEK_SET); // reset file offset
 
-    char buffer[fileLength];          // create array (buffer) to hold file.
-    memset(buffer, '\0', fileLength); // remove junk memory.
-    read(fd, buffer, fileLength);     // place string into buffer.
+    if (fileLength == 0) // config is empty
+    {
+        fprintf(stderr, "%sError%s: config file is empty.\n", RED, RESET);
+        return NULL;
+    }
+
+    char buffer[fileLength];              // create array (buffer) to hold file.
+    memset(buffer, '\0', fileLength);     // remove junk memory.
+    if (read(fd, buffer, fileLength) < 0) // place string into buffer.
+    {
+        fprintf(stderr, "%sError%s: read has encountered an error.\n", RED, RESET);
+        return NULL;
+    }
 
     char *tempIP = strtok(buffer, ":"); // start off tokenizer, get IP.
 

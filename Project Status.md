@@ -107,3 +107,9 @@ Status Update - Ali Awari - 4/16/19 @ 5:03PM
 * Editted for-loops to remove -stdc99 error message.
 * Fixed iLab bug where args needed to be malloc'd.
 * TODO: PLACE FREE() IN CORRECT PLACE FOR ARGS.
+
+Status Update - Ali Awari - 4/16/19 @ 5:03PM
+------------------------------------------------
+* Added function to index all files to be sent through socket.
+* Created files_type struct to hold files.
+* Fixed file_type bug where would put wrong values during creating node.
