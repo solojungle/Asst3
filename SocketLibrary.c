@@ -127,10 +127,12 @@ struct files_type *initializeFileNode(char *filename, int nameLength, char *file
 {
     struct files_type *temporary = (struct files_type *)malloc(sizeof(struct files_type));
 
-    temporary->file = malloc(strlen(file));
-    temporary->filename = malloc(strlen(filename));
-    memset(temporary->file, '\0', strlen(file));
-    memset(temporary->filename, '\0', strlen(filename));
+    temporary->file = malloc(strlen(file + 1));
+    temporary->filename = malloc(strlen(filename + 1));
+
+    memset(temporary->file, '\0', strlen(file + 1));
+    memset(temporary->filename, '\0', strlen(filename + 1));
+
     strcpy(temporary->file, file);
     strcpy(temporary->filename, filename);
 
@@ -165,17 +167,17 @@ void createFileList(char **files)
 
     if (files == NULL) // check to see if input is NULL.
     {
-        fprintf(stderr, "%sError%s: files is NULL.\n", RED, RESET);
+        fprintf(stderr, "%sError%s: Files is NULL.\n", RED, RESET);
         return;
     }
 
     if (files[0] == NULL) // see if files is empty.
     {
-        fprintf(stderr, "%sError%s: files is empty.\n", RED, RESET);
+        fprintf(stderr, "%sError%s: Files is empty.\n", RED, RESET);
         return;
     }
 
-    int index = 0;  // number of files.
+    int index = 0;  // number of files + 1.
     int fd;         // general fd for files.
     int fileLength; // length of file.
     int nameLength; // file name length.
@@ -188,7 +190,9 @@ void createFileList(char **files)
         if (fd == -1)
         {
             fprintf(stderr, "%sError%s: File at \"%s\" does not exist.\n", RED, RESET, files[index]);
-            return;
+            close(fd); // close file.
+            index += 1;
+            continue;
         }
 
         char *fileName = basename(files[index]); // get filename.
@@ -197,7 +201,8 @@ void createFileList(char **files)
         fileLength = lseek(fd, 0, SEEK_END); // find files length with lseek().
         if (fileLength == -1)
         {
-            fprintf(stderr, "%sError%s: lseek failed to find end of file.\n", RED, RESET);
+            fprintf(stderr, "%sError%s: Lseek failed to find end of file.\n", RED, RESET);
+            close(fd); // close file.
             return;
         }
 
@@ -205,13 +210,12 @@ void createFileList(char **files)
 
         if (fileLength == 0)
         {
-            fprintf(stderr, "%sError%s: File at \"%s\" is empty.\n", RED, RESET, files[index]);
-            return;
+            fprintf(stderr, "%sWarning%s: File at \"%s\" is empty.\n", RED, RESET, files[index]);
         }
 
-        char buffer[fileLength];          // create array (buffer) to hold file.
-        memset(buffer, '\0', fileLength); // remove junk memory.
-        read(fd, buffer, fileLength);     // place file into buffer.
+        char buffer[fileLength];              // create array (buffer) to hold file.
+        memset(buffer, '\0', fileLength + 1); // remove junk memory.
+        read(fd, buffer, fileLength);         // place file into buffer.
 
         root = append(initializeFileNode(fileName, nameLength, buffer, fileLength), root); // create list.
 

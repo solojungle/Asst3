@@ -117,3 +117,8 @@ Status Update - Ali Awari - 4/16/19 @ 9:23PM
 * Added function to index all files to be sent through socket.
 * Created files_type struct to hold files.
 * Fixed file_type bug where would put wrong values during creating node.
+
+Status Update - Ali Awari - 4/16/19 @ 9:23PM
+------------------------------------------------
+* Fixed bug in createFileList(), will also now accept empty files as input.
+* Added capitals to error messages.

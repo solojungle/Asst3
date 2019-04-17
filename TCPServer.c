@@ -17,9 +17,16 @@ int main(int argc, char *argv[])
 {
     if (argc == 1)
     {
-        fprintf(stderr, "%sError%s: please supply a port number!\n", RED, RESET);
+        fprintf(stderr, "%sError%s: Please supply a port number!\n", RED, RESET);
         return -1;
     }
+
+    char *filez[3];
+    memset(filez, '\0', 3);
+    filez[0] = "TEST DIR/text.txt";
+    filez[1] = "TEST DIR/text2.txt";
+
+    createFileList(filez);
 
     struct sockaddr_in socketAddress;           // sockaddr_in, is struct that holds an IP socket address format.
     int BACKLOG = 5;                            // maximum amount of pending connections that can be enqueued for a socket.
@@ -187,7 +194,7 @@ char *getCommandName(int n)
     case 13: // configure
         return "configure";
     default:
-        fprintf(stderr, "%sError%s: command not found\n", RED, RESET);
+        fprintf(stderr, "%sError%s: Command not found\n", RED, RESET);
         return NULL;
     }
 }
@@ -242,7 +249,7 @@ void handleArguments(char *arguments)
     case 13: // configure
         break;
     default:
-        fprintf(stderr, "%sError%s: command not found\n", RED, RESET);
+        fprintf(stderr, "%sError%s: Command not found\n", RED, RESET);
         return;
     }
 
@@ -265,7 +272,7 @@ void clean(void) // instructions to be run before exiting.
     if (close(server.socket_fd) == 0)
         printf("\nSocket closed.\n");
     else
-        fprintf(stderr, "\n%sError:%s closing socket has failed.\n", RED, RESET);
+        fprintf(stderr, "\n%sError:%s Closing socket has failed.\n", RED, RESET);
 
     printf("%sServer shutting down, closing all threads.%s\n", RED, RESET);
 

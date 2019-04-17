@@ -184,7 +184,7 @@ void sendArgument(char *argument)
 
     if (serverInfo == NULL) // an error occured reading the config file.
     {
-        fprintf(stderr, "%sError%s: server information is NULL.\n", RED, RESET);
+        fprintf(stderr, "%sError%s: Server information is NULL.\n", RED, RESET);
         free(serverInfo);
         exit(EXIT_FAILURE);
     }

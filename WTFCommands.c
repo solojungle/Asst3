@@ -13,34 +13,34 @@ void makeDirectory()
     {
         if (errno == EEXIST)
         {
-            fprintf(stderr, "%sWarning%s: .wtf directory already exists.\n", YELLOW, RESET);
+            fprintf(stderr, "%sWarning%s: .Wtf directory already exists.\n", YELLOW, RESET);
         }
         else
         {
-            fprintf(stderr, "%sError%s: mkdir() has failed to create .wtf folder.\n", RED, RESET);
+            fprintf(stderr, "%sError%s: Mkdir() has failed to create .wtf folder.\n", RED, RESET);
         }
     }
     else
     {
-        printf(".wtf directory has been created.\n");
+        printf(".Wtf directory has been created.\n");
     }
 
     if (mkdir(".wtf/objects", (S_IRWXU | S_IRWXG | S_IRWXO)) == -1) // grant all rights to everyone (mode 0777 = rwxrwxrwx).
     {
         if (errno == EEXIST)
         {
-            fprintf(stderr, "%sWarning%s: objects directory already exists.\n", YELLOW, RESET);
+            fprintf(stderr, "%sWarning%s: Objects directory already exists.\n", YELLOW, RESET);
         }
         else
         {
-            fprintf(stderr, "%sError%s: mkdir() has failed to create objects folder.\n", RED, RESET);
+            fprintf(stderr, "%sError%s: Mkdir() has failed to create objects folder.\n", RED, RESET);
         }
 
         return;
     }
     else
     {
-        printf("objects directory has been created.\n");
+        printf("Objects directory has been created.\n");
     }
 
     return;
@@ -76,7 +76,7 @@ void createConfig(char *address, char *port)
 
     if (write(fd, string, stringLength) != stringLength)
     {
-        fprintf(stderr, "%sError%s: there was an error writing to config.\n", RED, RESET);
+        fprintf(stderr, "%sError%s: There was an error writing to config.\n", RED, RESET);
     }
     else
     {
@@ -99,21 +99,21 @@ struct server_info *getServerConfig()
 
     if (temporary == NULL)
     {
-        fprintf(stderr, "%sError%s: malloc failed to allocate memory for struct server_info.\n", RED, RESET);
+        fprintf(stderr, "%sError%s: Malloc failed to allocate memory for struct server_info.\n", RED, RESET);
         return NULL;
     }
 
     int fd = open(".wtf/config.txt", O_RDONLY); // get fd for config file.
     if (fd == -1)
     {
-        fprintf(stderr, "%sError%s: open has failed to retrieve the config file.\n", RED, RESET);
+        fprintf(stderr, "%sError%s: Open has failed to retrieve the config file.\n", RED, RESET);
         return NULL;
     }
 
     int fileLength = lseek(fd, 0, SEEK_END); // find files length with lseek().
     if (fileLength == -1)
     {
-        fprintf(stderr, "%sError%s: lseek failed to find end of file.\n", RED, RESET);
+        fprintf(stderr, "%sError%s: Lseek failed to find end of file.\n", RED, RESET);
         return NULL;
     }
 
@@ -121,7 +121,7 @@ struct server_info *getServerConfig()
 
     if (fileLength == 0) // config is empty
     {
-        fprintf(stderr, "%sError%s: config file is empty.\n", RED, RESET);
+        fprintf(stderr, "%sError%s: Config file is empty.\n", RED, RESET);
         return NULL;
     }
 
@@ -129,7 +129,7 @@ struct server_info *getServerConfig()
     memset(buffer, '\0', fileLength);     // remove junk memory.
     if (read(fd, buffer, fileLength) < 0) // place string into buffer.
     {
-        fprintf(stderr, "%sError%s: read has encountered an error.\n", RED, RESET);
+        fprintf(stderr, "%sError%s: Read has encountered an error.\n", RED, RESET);
         return NULL;
     }
 
@@ -139,7 +139,7 @@ struct server_info *getServerConfig()
 
     if (temporary->IP == NULL)
     {
-        fprintf(stderr, "%sError%s: malloc failed to allocate memory for server_info->IP attribute.\n", RED, RESET);
+        fprintf(stderr, "%sError%s: Malloc failed to allocate memory for server_info->IP attribute.\n", RED, RESET);
         return NULL;
     }
 
