@@ -108,7 +108,11 @@ Status Update - Ali Awari - 4/16/19 @ 5:03PM
 * Fixed iLab bug where args needed to be malloc'd.
 * TODO: PLACE FREE() IN CORRECT PLACE FOR ARGS.
 
-Status Update - Ali Awari - 4/16/19 @ 5:03PM
+Status Update - Dennis Kager - 4/16/19 @ 7:55PM
+------------------------------------------------
+* Fixed a segfault caused by a loop which kills threads stepping out of bounds
+
+Status Update - Ali Awari - 4/16/19 @ 9:23PM
 ------------------------------------------------
 * Added function to index all files to be sent through socket.
 * Created files_type struct to hold files.
