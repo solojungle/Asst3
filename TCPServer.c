@@ -21,13 +21,6 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    char *filez[3];
-    memset(filez, '\0', 3);
-    filez[0] = "TEST DIR/text.txt";
-    filez[1] = "TEST DIR/text2.txt";
-
-    createFileList(filez);
-
     struct sockaddr_in socketAddress;           // sockaddr_in, is struct that holds an IP socket address format.
     int BACKLOG = 5;                            // maximum amount of pending connections that can be enqueued for a socket.
     const int PORT = strtol(argv[1], NULL, 10); // given port number.
