@@ -118,7 +118,7 @@ Status Update - Ali Awari - 4/16/19 @ 9:23PM
 * Created files_type struct to hold files.
 * Fixed file_type bug where would put wrong values during creating node.
 
-Status Update - Ali Awari - 4/16/19 @ 9:23PM
+Status Update - Ali Awari - 4/17/19 @ 4:21PM
 ------------------------------------------------
 * Fixed bug in createFileList(), will also now accept empty files as input.
 * Added capitals to error messages.
