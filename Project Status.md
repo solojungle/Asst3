@@ -122,3 +122,8 @@ Status Update - Ali Awari - 4/17/19 @ 4:21PM
 ------------------------------------------------
 * Fixed bug in createFileList(), will also now accept empty files as input.
 * Added capitals to error messages.
+
+Status Update - Ali Awari - 4/19/19 @ 3:24AM
+------------------------------------------------
+* Finished sending file functions.
+* TODO: test/comment out functions. Think about free()

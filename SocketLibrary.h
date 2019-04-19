@@ -23,20 +23,24 @@ struct server_type
 
 struct files_type
 {
-    int fileLength;
-    int nameLength;
+    int file_length;
+    int filename_length;
     char *filename;
     char *file;
     struct files_type *next;
 };
 
+extern char *intToStr(long int, char *, int);
+extern int digits(int);
 extern void initializeSocket(struct server_type *);
 extern void bindSocket(struct server_type *, struct sockaddr_in);
 extern void listenSocket(struct server_type *, struct sockaddr_in, int);
 extern void handleServerClose(int);
 extern void setSocketOptions(struct server_type *);
 extern void getIPAddress(int, char *);
-extern void createFileList(char **);
+extern void createFilesFromStream(char *);
+extern void sendFiles(struct files_type *, int);
+extern struct files_type *createFileList(char **, int);
 extern struct files_type *append(struct files_type *, struct files_type *);
 extern struct files_type *initializeFileNode(char *, int, char *, int);
 

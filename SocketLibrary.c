@@ -136,8 +136,8 @@ struct files_type *initializeFileNode(char *filename, int nameLength, char *file
     strcpy(temporary->file, file);
     strcpy(temporary->filename, filename);
 
-    temporary->nameLength = nameLength;
-    temporary->fileLength = fileLength;
+    temporary->filename_length = nameLength;
+    temporary->file_length = fileLength;
 
     temporary->next = NULL;
 
@@ -162,70 +162,232 @@ struct files_type *append(struct files_type *new, struct files_type *root)
     return root;
 }
 
-void createFileList(char **files)
+struct files_type *createFileList(char **files, int n)
 {
+    struct files_type *root = NULL; // create starting point.
 
     if (files == NULL) // check to see if input is NULL.
     {
         fprintf(stderr, "%sError%s: Files is NULL.\n", RED, RESET);
-        return;
+        return root;
     }
 
     if (files[0] == NULL) // see if files is empty.
     {
         fprintf(stderr, "%sError%s: Files is empty.\n", RED, RESET);
-        return;
+        return root;
     }
 
-    int index = 0;  // number of files + 1.
-    int fd;         // general fd for files.
-    int fileLength; // length of file.
-    int nameLength; // file name length.
+    if (n <= 0)
+    {
+        fprintf(stderr, "%sError%s: Must provide a non-negative number of files.\n", RED, RESET);
+        return root;
+    }
 
-    struct files_type *root = NULL; // create starting point.
+    int index = 0;       // number of files + 1.
+    int fd;              // general fd for files.
+    int file_length;     // length of file.
+    int filename_length; // file name length.
 
-    while (files[index][0] != '\0') // files[index] will almost never be NULL, must compare to it's first char files[index][0].
+    while (index < n)
     {
         fd = open(files[index], O_RDONLY); // open file from array.
+
         if (fd == -1)
         {
             fprintf(stderr, "%sError%s: File at \"%s\" does not exist.\n", RED, RESET, files[index]);
-            close(fd); // close file.
-            index += 1;
-            continue;
         }
-
-        char *fileName = basename(files[index]); // get filename.
-        nameLength = strlen(fileName);           // get length of filename.
-
-        fileLength = lseek(fd, 0, SEEK_END); // find files length with lseek().
-        if (fileLength == -1)
+        else
         {
-            fprintf(stderr, "%sError%s: Lseek failed to find end of file.\n", RED, RESET);
-            close(fd); // close file.
-            return;
+            char *filename = basename(files[index]); // get filename.
+            filename_length = strlen(filename);      // get length of filename.
+
+            file_length = lseek(fd, 0, SEEK_END); // find files length with lseek().
+            if (file_length == -1)
+            {
+                fprintf(stderr, "%sError%s: Lseek failed to find end of file.\n", RED, RESET);
+                close(fd); // close file.
+                return root;
+            }
+
+            lseek(fd, 0, SEEK_SET); // reset file offset.
+
+            if (file_length == 0)
+            {
+                fprintf(stderr, "%sWarning%s: File at \"%s\" is empty.\n", RED, RESET, files[index]);
+            }
+
+            char buffer[file_length + 1];          // create array (buffer) to hold file.
+            memset(buffer, '\0', file_length + 1); // remove junk memory.
+            read(fd, buffer, file_length);         // place file into buffer.
+
+            root = append(initializeFileNode(filename, filename_length, buffer, file_length), root); // create list.
         }
 
-        lseek(fd, 0, SEEK_SET); // reset file offset.
-
-        if (fileLength == 0)
+        if (fd) // don't need to close unopened file.
         {
-            fprintf(stderr, "%sWarning%s: File at \"%s\" is empty.\n", RED, RESET, files[index]);
+            close(fd); // close file.
         }
 
-        char buffer[fileLength];              // create array (buffer) to hold file.
-        memset(buffer, '\0', fileLength + 1); // remove junk memory.
-        read(fd, buffer, fileLength);         // place file into buffer.
-
-        root = append(initializeFileNode(fileName, nameLength, buffer, fileLength), root); // create list.
-
-        close(fd);  // close file.
-        index += 1; // increment cursor.
+        index += 1;
     }
 
-    while (root != NULL) // DEBUGGING, print all nodes
+    return root;
+}
+
+void sendFiles(struct files_type *files, int fd)
+{
+    if (files == NULL)
     {
-        printf("%i:%s:%i:%s\n", root->nameLength, root->filename, root->fileLength, root->file);
-        root = root->next;
+        return;
     }
+
+    if (fd == -1)
+    {
+        return;
+    }
+
+    int fileCount = 0;
+
+    char *allFilenames = malloc(1);
+    memset(allFilenames, '\0', 1);
+
+    char *allFiles = malloc(1);
+    memset(allFiles, '\0', 1);
+
+    struct files_type *cursor = files;
+    while (cursor != NULL)
+    {
+        fileCount += 1;
+
+        int totalFileLength = strlen(allFiles) + cursor->file_length + 1;
+
+        char fileBuffer[totalFileLength];
+        memset(fileBuffer, '\0', totalFileLength);
+        strcpy(fileBuffer, allFiles);
+        strcat(fileBuffer, cursor->file);
+
+        if (cursor->file_length <= 0) {
+            printf("%sFile is empty.%s\n", RED, RESET);
+        } else {
+
+        allFiles = realloc(allFiles, totalFileLength);
+
+        strcpy(allFiles, fileBuffer);
+
+        }
+
+        int bufferLength = digits(cursor->filename_length) + 1 + cursor->filename_length + digits(cursor->file_length) + 1 + 1; // (:, :, '\0')
+
+        char buffer[bufferLength];
+        memset(buffer, '\0', bufferLength);
+
+        char number[65];
+        intToStr(cursor->filename_length, number, 10);
+
+        strcpy(buffer, number);
+        strcat(buffer, ":");
+        strcat(buffer, cursor->filename);
+
+        intToStr(cursor->file_length, number, 10);
+        strcat(buffer, number);
+        strcat(buffer, ":");
+
+        int new_buff = strlen(allFilenames) + strlen(buffer) + 1;
+        char filenameBuffer[new_buff];
+        memset(filenameBuffer, '\0', new_buff);
+
+        strcpy(filenameBuffer, allFilenames);
+        strcat(filenameBuffer, buffer);
+
+
+        allFilenames = realloc(allFilenames, new_buff);
+
+        strcpy(allFilenames, filenameBuffer);
+
+        cursor = cursor->next;
+    }
+
+    char numberBuff[65];
+    intToStr(fileCount, numberBuff, 10);
+    char encoded[5 + digits(fileCount) + 1 + strlen(allFilenames) + strlen(allFiles) + 1];
+    strcpy(encoded, "send:");
+    strcat(encoded, numberBuff);
+    strcat(encoded, ":");
+    strcat(encoded, allFilenames);
+    strcat(encoded, allFiles);
+
+    printf("%s\n", encoded);
+
+    return;
+}
+
+void createFilesFromStream(char *dataStream)
+{
+    //    mkdir();
+    //    open();
+    //    write();
+    //    close();
+    return;
+}
+
+
+
+/*
+  Counts the number of digits in a integer.
+
+  SYNOPSIS
+    digits()
+      val     - value to number
+
+  DESCRIPTION
+    Takes any number in base 10, and counts the digits in the number.
+
+  RETURN VALUE
+    The number of digits.
+*/
+int digits(int n)
+{
+    int count = 0;
+    while (n != 0)
+    {
+        n /= 10; // n = n/10
+        ++count;
+    }
+
+    return count;
+}
+
+char *intToStr(long int val, char *dst, int radix)
+{
+    char buffer[65];
+    char *p;
+    long int new_val;
+    unsigned long int uval = (unsigned long int)val;
+
+    if (radix < 0) /* -10 */
+    {
+        if (val < 0)
+        {
+            *dst++ = '-';
+            /* Avoid integer overflow in (-val) for LLONG_MIN (BUG#31799). */
+            uval = (unsigned long int)0 - uval;
+        }
+    }
+
+    p = &buffer[sizeof(buffer) - 1];
+    *p = '\0';
+    new_val = (long)(uval / 10);
+    *--p = '0' + (char)(uval - (unsigned long)new_val * 10);
+    val = new_val;
+
+    while (val != 0)
+    {
+        new_val = val / 10;
+        *--p = '0' + (char)(val - new_val * 10);
+        val = new_val;
+    }
+    while ((*dst++ = *p++) != 0)
+        ;
+    return dst - 1;
 }
