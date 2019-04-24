@@ -8,7 +8,7 @@ compileServer: TCPServer.c TCPServer.h SocketLibrary.o WTFCommands.o
 
 # compiles client includes, socket_lib, and core_commands
 compileClient: Client.c Client.h SocketLibrary.o WTFCommands.o
-	gcc $(CFLAGS) -o client Client.c SocketLibrary.o WTFCommands.o
+	gcc $(CFLAGS) -o client Client.c SocketLibrary.o WTFCommands.o -lssl -lcrypto
 
 # compile socket_lib
 SocketLibrary.o: SocketLibrary.c SocketLibrary.h
