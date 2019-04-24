@@ -127,3 +127,11 @@ Status Update - Ali Awari - 4/19/19 @ 3:24AM
 ------------------------------------------------
 * Finished sending file functions.
 * TODO: test/comment out functions. Think about free()
+
+Status Update - Dennis Kager - 4/23/19 @ 8:45PM
+------------------------------------------------
+* Added manifest cabability in Client.h and added function definitions in Client.h
+* Updated makefile to work with OpenSSL
+* I still have to add some comments
+* I have not added free() capability next, but I can do that next...
+* TODO: Free() dynamic memory
