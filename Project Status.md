@@ -135,3 +135,10 @@ Status Update - Dennis Kager - 4/23/19 @ 8:45PM
 * I still have to add some comments
 * I have not added free() capability next, but I can do that next...
 * TODO: Free() dynamic memory
+
+Status Update - Dennis Kager - 4/25/19 @ 6:10PM
+------------------------------------------------
+* Moved the manifest functions from Client.c and Client.h to WTFCommands.c and WTFCommands.h to allow for the server to use those functions too
+* Updated the makefile to reflect those changes
+* Created a function to free the linked lists generated from the manifest functions
+* Free()ed the args struct after being done with it in TCPServer.c
