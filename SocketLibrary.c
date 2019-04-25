@@ -1,5 +1,4 @@
 #include "SocketLibrary.h" // general socket functions
-#include <libgen.h>
 
 /*
  *  initializeSocket()
@@ -15,7 +14,7 @@ void initializeSocket(struct server_type *server)
         fprintf(stderr, "Socket has %sfailed%s to be created.\nFILE: %s \nLINE: %d\n", RED, RESET, __FILE__, __LINE__);
         exit(EXIT_FAILURE); // shutdown server correctly.
     }
-
+    
     printf("Socket has been %ssuccessfully%s created...\n", GREEN, RESET);
     return;
 }
@@ -35,7 +34,7 @@ void bindSocket(struct server_type *server, struct sockaddr_in server_addr)
         fprintf(stderr, "Socket has %sfailed%s to bind to an address.\nFILE: %s \nLINE: %d\n", RED, RESET, __FILE__, __LINE__);
         exit(EXIT_FAILURE); // shutdown server correctly.
     }
-
+    
     printf("Socket has %ssuccessfully%s bound to an address...\n", GREEN, RESET);
     return;
 }
@@ -56,10 +55,10 @@ void listenSocket(struct server_type *server, struct sockaddr_in server_addr, in
         fprintf(stderr, "Socket has %sfailed%s to listen on port: %i.\nFILE: %s \nLINE: %d\n", RED, RESET, server_addr.sin_port, __FILE__, __LINE__);
         exit(EXIT_FAILURE); // shutdown server correctly.
     }
-
+    
     // htons(), changes number based on endianess on machine, must ntohs() to display original port.
     printf("Server is now listening on port: %s%i%s.\n\n", GREEN, ntohs(server_addr.sin_port), RESET);
-
+    
     return;
 }
 
@@ -78,11 +77,11 @@ void setSocketOptions(struct server_type *server)
      *  when you close it. In that state it will wait until all pending data has been
      *  successfully sent or until a timeout is hit, in which case the socket is closed
      *  forcefully.
-     * 
+     *
      *  Why SO_REUSEADDR (Socket Option REUSEADDR) works:
      *  The socket can be successfully bound unless there is a conflict with another socket
      *  bound to EXACTLY the same combination of source address and port.
-     * 
+     *
      *  If SO_REUSEADDR is set for the socket you are trying to bind, another socket bound to
      *  the same address and port in state TIME_WAIT is simply ignored, after all its already
      *  "half dead", and your socket can bind to exactly the same address without any problem.
@@ -93,7 +92,7 @@ void setSocketOptions(struct server_type *server)
         fprintf(stderr, "SO_REUSEADDR has %sfailed%s to be enabled.\nFILE: %s \nLINE: %d\n", RED, RESET, __FILE__, __LINE__);
         return;
     }
-
+    
     printf("SO_REUSEADDR has %ssuccessfully%s been enabled...\n", GREEN, RESET);
     return;
 }
@@ -110,14 +109,14 @@ void getIPAddress(int fd, char *IP)
 {
     struct sockaddr_in clientAddress;
     socklen_t clientLength = sizeof(clientAddress);
-
+    
     if (getpeername(fd, (struct sockaddr *)&clientAddress, &clientLength) == -1) // finds socket IP address.
     {
         fprintf(stderr, "Unable to find a valid IP Address.\n");
         strcpy(IP, "NULL");
         return;
     }
-
+    
     strcpy(IP, inet_ntoa(clientAddress.sin_addr)); // copy address to passed string.
     return;
 }
@@ -126,268 +125,43 @@ void getIPAddress(int fd, char *IP)
 struct files_type *initializeFileNode(char *filename, int nameLength, char *file, int fileLength)
 {
     struct files_type *temporary = (struct files_type *)malloc(sizeof(struct files_type));
-
-    temporary->file = malloc(strlen(file + 1));
-    temporary->filename = malloc(strlen(filename + 1));
-
-    memset(temporary->file, '\0', strlen(file + 1));
-    memset(temporary->filename, '\0', strlen(filename + 1));
-
+    temporary->file = malloc(strlen(file));
+    temporary->filename = malloc(strlen(filename));
+    
+    memset(temporary->file, '\0', strlen(file));
+    memset(temporary->filename, '\0', strlen(filename));
+    
     strcpy(temporary->file, file);
     strcpy(temporary->filename, filename);
-
-    temporary->filename_length = nameLength;
-    temporary->file_length = fileLength;
-
+    
+    temporary->file = file;
+    temporary->fileLength = fileLength;
     temporary->next = NULL;
-
+    
     return temporary;
 }
 
-struct files_type *append(struct files_type *new, struct files_type *root)
-{
-    if (root == NULL) // if first node.
-    {
-        return new;
-    }
+// void sendFile(char **files)
+// {
+//     int index = 0;
+//     int fd;
+//     int fileLength;
+//     int nameLength;
 
-    struct files_type *cursor = root;
-    while (cursor->next != NULL) // find end.
-    {
-        cursor = cursor->next;
-    }
+//     while (files[index] != NULL)
+//     {
+//         char *fileName = basename(files[index]); // get filename.
+//         nameLength = strlen(fileName);           // get length of filename.
 
-    cursor->next = new; // append to list.
+//         fd = open(files[index], O_RDONLY);   // open file from array.
+//         fileLength = lseek(fd, 0, SEEK_END); // find files length with lseek().
+//         lseek(fd, 0, SEEK_SET);              // reset file offset.
 
-    return root;
-}
+//         char buffer[fileLength];          // create array (buffer) to hold file.
+//         memset(buffer, '\0', fileLength); // remove junk memory.
+//         read(fd, buffer, fileLength);     // place file into buffer.
 
-struct files_type *createFileList(char **files, int n)
-{
-    struct files_type *root = NULL; // create starting point.
-
-    if (files == NULL) // check to see if input is NULL.
-    {
-        fprintf(stderr, "%sError%s: Files is NULL.\n", RED, RESET);
-        return root;
-    }
-
-    if (files[0] == NULL) // see if files is empty.
-    {
-        fprintf(stderr, "%sError%s: Files is empty.\n", RED, RESET);
-        return root;
-    }
-
-    if (n <= 0)
-    {
-        fprintf(stderr, "%sError%s: Must provide a non-negative number of files.\n", RED, RESET);
-        return root;
-    }
-
-    int index = 0;       // number of files + 1.
-    int fd;              // general fd for files.
-    int file_length;     // length of file.
-    int filename_length; // file name length.
-
-    while (index < n)
-    {
-        fd = open(files[index], O_RDONLY); // open file from array.
-
-        if (fd == -1)
-        {
-            fprintf(stderr, "%sError%s: File at \"%s\" does not exist.\n", RED, RESET, files[index]);
-        }
-        else
-        {
-            char *filename = basename(files[index]); // get filename.
-            filename_length = strlen(filename);      // get length of filename.
-
-            file_length = lseek(fd, 0, SEEK_END); // find files length with lseek().
-            if (file_length == -1)
-            {
-                fprintf(stderr, "%sError%s: Lseek failed to find end of file.\n", RED, RESET);
-                close(fd); // close file.
-                return root;
-            }
-
-            lseek(fd, 0, SEEK_SET); // reset file offset.
-
-            if (file_length == 0)
-            {
-                fprintf(stderr, "%sWarning%s: File at \"%s\" is empty.\n", RED, RESET, files[index]);
-            }
-
-            char buffer[file_length + 1];          // create array (buffer) to hold file.
-            memset(buffer, '\0', file_length + 1); // remove junk memory.
-            read(fd, buffer, file_length);         // place file into buffer.
-
-            root = append(initializeFileNode(filename, filename_length, buffer, file_length), root); // create list.
-        }
-
-        if (fd) // don't need to close unopened file.
-        {
-            close(fd); // close file.
-        }
-
-        index += 1;
-    }
-
-    return root;
-}
-
-void sendFiles(struct files_type *files, int fd)
-{
-    if (files == NULL)
-    {
-        return;
-    }
-
-    if (fd == -1)
-    {
-        return;
-    }
-
-    int fileCount = 0;
-
-    char *allFilenames = malloc(1);
-    memset(allFilenames, '\0', 1);
-
-    char *allFiles = malloc(1);
-    memset(allFiles, '\0', 1);
-
-    struct files_type *cursor = files;
-    while (cursor != NULL)
-    {
-        fileCount += 1;
-
-        int totalFileLength = strlen(allFiles) + cursor->file_length + 1;
-
-        char fileBuffer[totalFileLength];
-        memset(fileBuffer, '\0', totalFileLength);
-        strcpy(fileBuffer, allFiles);
-        strcat(fileBuffer, cursor->file);
-
-        if (cursor->file_length <= 0) {
-            printf("%sFile is empty.%s\n", RED, RESET);
-        } else {
-
-        allFiles = realloc(allFiles, totalFileLength);
-
-        strcpy(allFiles, fileBuffer);
-
-        }
-
-        int bufferLength = digits(cursor->filename_length) + 1 + cursor->filename_length + digits(cursor->file_length) + 1 + 1; // (:, :, '\0')
-
-        char buffer[bufferLength];
-        memset(buffer, '\0', bufferLength);
-
-        char number[65];
-        intToStr(cursor->filename_length, number, 10);
-
-        strcpy(buffer, number);
-        strcat(buffer, ":");
-        strcat(buffer, cursor->filename);
-
-        intToStr(cursor->file_length, number, 10);
-        strcat(buffer, number);
-        strcat(buffer, ":");
-
-        int new_buff = strlen(allFilenames) + strlen(buffer) + 1;
-        char filenameBuffer[new_buff];
-        memset(filenameBuffer, '\0', new_buff);
-
-        strcpy(filenameBuffer, allFilenames);
-        strcat(filenameBuffer, buffer);
-
-
-        allFilenames = realloc(allFilenames, new_buff);
-
-        strcpy(allFilenames, filenameBuffer);
-
-        cursor = cursor->next;
-    }
-
-    char numberBuff[65];
-    intToStr(fileCount, numberBuff, 10);
-    char encoded[5 + digits(fileCount) + 1 + strlen(allFilenames) + strlen(allFiles) + 1];
-    strcpy(encoded, "send:");
-    strcat(encoded, numberBuff);
-    strcat(encoded, ":");
-    strcat(encoded, allFilenames);
-    strcat(encoded, allFiles);
-
-    printf("%s\n", encoded);
-
-    return;
-}
-
-void createFilesFromStream(char *dataStream)
-{
-    //    mkdir();
-    //    open();
-    //    write();
-    //    close();
-    return;
-}
-
-
-
-/*
-  Counts the number of digits in a integer.
-
-  SYNOPSIS
-    digits()
-      val     - value to number
-
-  DESCRIPTION
-    Takes any number in base 10, and counts the digits in the number.
-
-  RETURN VALUE
-    The number of digits.
-*/
-int digits(int n)
-{
-    int count = 0;
-    while (n != 0)
-    {
-        n /= 10; // n = n/10
-        ++count;
-    }
-
-    return count;
-}
-
-char *intToStr(long int val, char *dst, int radix)
-{
-    char buffer[65];
-    char *p;
-    long int new_val;
-    unsigned long int uval = (unsigned long int)val;
-
-    if (radix < 0) /* -10 */
-    {
-        if (val < 0)
-        {
-            *dst++ = '-';
-            /* Avoid integer overflow in (-val) for LLONG_MIN (BUG#31799). */
-            uval = (unsigned long int)0 - uval;
-        }
-    }
-
-    p = &buffer[sizeof(buffer) - 1];
-    *p = '\0';
-    new_val = (long)(uval / 10);
-    *--p = '0' + (char)(uval - (unsigned long)new_val * 10);
-    val = new_val;
-
-    while (val != 0)
-    {
-        new_val = val / 10;
-        *--p = '0' + (char)(val - new_val * 10);
-        val = new_val;
-    }
-    while ((*dst++ = *p++) != 0)
-        ;
-    return dst - 1;
-}
+//         close(fd);
+//         index += 1;
+//     }
+// }
