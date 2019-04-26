@@ -30,6 +30,7 @@ struct files_type
     struct files_type *next;
 };
 
+extern char *createEncodedString(struct files_type *);
 extern char *intToStr(long int, char *, int);
 extern int digits(int);
 extern void initializeSocket(struct server_type *);

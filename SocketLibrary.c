@@ -162,6 +162,20 @@ struct files_type *append(struct files_type *new, struct files_type *root)
     return root;
 }
 
+/*
+  Counts the number of digits in a integer.
+
+  SYNOPSIS
+    createFileList()
+      files     - array of strings (pathnames)
+      n         - number of files to check
+
+  DESCRIPTION
+    Takes files pathnames and creates a linked list,, 
+
+  RETURN VALUE
+    The number of digits.
+*/
 struct files_type *createFileList(char **files, int n)
 {
     struct files_type *root = NULL; // create starting point.
@@ -237,50 +251,60 @@ struct files_type *createFileList(char **files, int n)
 
 void sendFiles(struct files_type *files, int fd)
 {
-    if (files == NULL)
-    {
-        return;
-    }
-
     if (fd == -1)
     {
+        fprintf(stderr, "%sError%s: File descriptor is invalid.\n", RED, RESET);
         return;
     }
 
-    int fileCount = 0;
+    char *string = createEncodedString(files);
+    printf("%s\n", string);
+    free(string);
 
-    char *allFilenames = malloc(1);
-    memset(allFilenames, '\0', 1);
+    return;
+}
 
-    char *allFiles = malloc(1);
-    memset(allFiles, '\0', 1);
+char *createEncodedString(struct files_type *files)
+{
+    if (files == NULL)
+    {
+        fprintf(stderr, "%sError%s: Files is NULL.\n", RED, RESET);
+        return NULL;
+    }
+
+    char *filenames_string = malloc(1);
+    memset(filenames_string, '\0', 1);
+    char *files_string = malloc(1);
+    memset(files_string, '\0', 1);
+
+    int file_count = 0;
 
     struct files_type *cursor = files;
     while (cursor != NULL)
     {
-        fileCount += 1;
+        file_count += 1;
 
-        int totalFileLength = strlen(allFiles) + cursor->file_length + 1;
+        int totalFileLength = strlen(files_string) + cursor->file_length + 1;
 
         char fileBuffer[totalFileLength];
         memset(fileBuffer, '\0', totalFileLength);
-        strcpy(fileBuffer, allFiles);
+        strcpy(fileBuffer, files_string);
         strcat(fileBuffer, cursor->file);
 
-        if (cursor->file_length <= 0) {
-            printf("%sFile is empty.%s\n", RED, RESET);
-        } else {
-
-        allFiles = realloc(allFiles, totalFileLength);
-
-        strcpy(allFiles, fileBuffer);
-
+        if (cursor->file_length <= 0)
+        {
+            printf("%sWarning%s: An empty file was encoded: \"%s\".\n", RED, RESET, cursor->filename);
+        }
+        else
+        {
+            files_string = realloc(files_string, totalFileLength);
+            strcpy(files_string, fileBuffer);
         }
 
-        int bufferLength = digits(cursor->filename_length) + 1 + cursor->filename_length + digits(cursor->file_length) + 1 + 1; // (:, :, '\0')
+        int buffer_length = digits(cursor->filename_length) + 1 + cursor->filename_length + digits(cursor->file_length) + 1 + 1; // (:, :, '\0')
 
-        char buffer[bufferLength];
-        memset(buffer, '\0', bufferLength);
+        char buffer[buffer_length];
+        memset(buffer, '\0', buffer_length);
 
         char number[65];
         intToStr(cursor->filename_length, number, 10);
@@ -293,45 +317,42 @@ void sendFiles(struct files_type *files, int fd)
         strcat(buffer, number);
         strcat(buffer, ":");
 
-        int new_buff = strlen(allFilenames) + strlen(buffer) + 1;
+        int new_buff = strlen(filenames_string) + strlen(buffer) + 1;
         char filenameBuffer[new_buff];
         memset(filenameBuffer, '\0', new_buff);
 
-        strcpy(filenameBuffer, allFilenames);
+        strcpy(filenameBuffer, filenames_string);
         strcat(filenameBuffer, buffer);
 
+        filenames_string = realloc(filenames_string, new_buff);
 
-        allFilenames = realloc(allFilenames, new_buff);
+        strcpy(filenames_string, filenameBuffer);
 
-        strcpy(allFilenames, filenameBuffer);
+        struct files_type *temp = cursor;
+        free(cursor->file);
+        free(cursor->filename);
 
         cursor = cursor->next;
+        free(temp);
     }
 
     char numberBuff[65];
-    intToStr(fileCount, numberBuff, 10);
-    char encoded[5 + digits(fileCount) + 1 + strlen(allFilenames) + strlen(allFiles) + 1];
+    intToStr(file_count, numberBuff, 10);
+    int encoded_length = 5 + digits(file_count) + 1 + strlen(filenames_string) + strlen(files_string) + 1;
+    char *encoded = malloc(encoded_length);
+    memset(encoded, '\0', encoded_length);
+    // char encoded[encoded_length];
     strcpy(encoded, "send:");
     strcat(encoded, numberBuff);
     strcat(encoded, ":");
-    strcat(encoded, allFilenames);
-    strcat(encoded, allFiles);
+    strcat(encoded, filenames_string);
+    strcat(encoded, files_string);
 
-    printf("%s\n", encoded);
+    free(filenames_string);
+    free(files_string);
 
-    return;
+    return encoded;
 }
-
-void createFilesFromStream(char *dataStream)
-{
-    //    mkdir();
-    //    open();
-    //    write();
-    //    close();
-    return;
-}
-
-
 
 /*
   Counts the number of digits in a integer.
