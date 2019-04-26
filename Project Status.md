@@ -136,6 +136,21 @@ Status Update - Dennis Kager - 4/23/19 @ 8:45PM
 * I have not added free() capability next, but I can do that next...
 * TODO: Free() dynamic memory
 
+Status Update - Dennis Kager - 4/25/19 @ 6:10PM
+------------------------------------------------
+* Moved the manifest functions from Client.c and Client.h to WTFCommands.c and WTFCommands.h to allow for the server to use those functions too
+* Updated the makefile to reflect those changes
+* Created a function to free the linked lists generated from the manifest functions
+* Free()ed the args struct after being done with it in TCPServer.c
+
+Status Update - Dennis Kager - 4/26/19 @ 2:20PM
+------------------------------------------------
+* Fixed a small error in SocketLibrary.c
+* Added functionality to the create function
+* WTFCommands.c and WTFCommands.h now has create() which will create a .server_repo folder to hold the server projects, if it does not exist already, then will proceed to add the project that the user requests
+* Added createMutex() and removeMutex() as ways to prevent multiple clients from working on the same repository
+* Added checkStatus() which will check to see if a repo is protected with a mutex before working on it. If there is a mutex, it will wait for a second and then look again until the mutex is gone (indicating that the repo is free to be worked on now). This prevents multiple clients from working on the same repository at the same time
+
 Status Update - Ali Awari - 4/26/19 @ 2:05PM
 ------------------------------------------------
 * Added functions which encoded files into a string.
