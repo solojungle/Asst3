@@ -645,3 +645,102 @@ DONE: ;
 
 //                      CLIENT MANIFEST FUNCTIONS UP ABOVE
 //==================================================================================
+//                             COMMANDS DOWN BELOW
+
+void checkStatus(char *repo){
+    _Bool wait = 0;                  // Variable used to tell whether or not to wait
+    DIR *dd = opendir(repo);      // Open given repo
+    struct dirent *status = NULL; // Status pointer of type struct dirent
+    
+    do{
+        wait = 0; // Reset wait to 0
+        
+        if(dd != NULL){
+            status = readdir(dd); // readdir() retuns pointer to next directory entry
+            
+            while(status != NULL){ // If directory can be accessed, then keep looping
+                status = readdir(dd); // readdir() retuns pointer to next directory entry
+                
+                if(status == NULL) // If the direcory cannot be accessed, then exit
+                    break;
+                
+                // DO SOMETHING HERE WITH FILES FOUND
+                if(strcmp(".mutex", status -> d_name) == 0){
+                    printf("File: %s\n", status -> d_name);
+                    wait = 1; // Set wait to true
+                    sleep(1); // Sleep for 1 second
+                    closedir(dd); // Close repo to start again
+                    DIR *dd = opendir(repo);  // Open given repo
+                }
+            }
+        }
+    }while(wait == 1);
+    
+    closedir(dd);
+}
+
+void createMutex(char *repo){
+    char *path = (char*)malloc((strlen(repo) + 8) * sizeof(char));
+    if(path == NULL){
+        fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
+        return;
+    }
+    strcpy(path, repo);
+    strcat(path, "/.mutex");
+    strcat(path, "\0");
+    
+    int wd = open(path, O_CREAT | O_RDONLY, S_IRWXU);
+    close(wd);
+}
+
+void removeMutex(char *repo){
+    char *path = (char*)malloc((strlen(repo) + 8) * sizeof(char));
+    if(path == NULL){
+        fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
+        return;
+    }
+    strcpy(path, repo);
+    strcat(path, "/.mutex");
+    strcat(path, "\0");
+    
+    remove(path);
+}
+
+void create(char *repo){
+    DIR *sr = opendir("./.server_repos");
+    char *path = (char*)malloc((strlen(repo) + 17) * sizeof(char));
+    if(path == NULL){
+        fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
+        return;
+    }
+    strcpy(path, "./.server_repos/");
+    strcat(path, repo);
+    strcat(path, "\0");
+    
+    if(sr == NULL){ // Check to see if the directory .server_repos exists
+        if (mkdir(".server_repos", S_IRWXU | S_IRWXG | S_IRWXO) == -1){ // grant all rights to everyone (mode 0777 = rwxrwxrwx).
+            fprintf(stderr, "%sError%s: Mkdir() has failed to create .server_repos folder.\n", RED, RESET);
+            return;
+        }
+        else
+            printf(".server_repos directory has been created.\n");
+    }
+    else
+        closedir(sr);
+    
+    checkStatus("./.server_repos"); // If repo is occupied, will make function wait until it is free to use
+    createMutex("./.server_repos"); // Lock down repository so no one can modify it
+    
+    if (mkdir(path, S_IRWXU | S_IRWXG | S_IRWXO) == -1) // grant all rights to everyone (mode 0777 = rwxrwxrwx).
+    {
+        fprintf(stderr, "%sError%s: Mkdir() has failed to create %s folder.\n", RED, RESET, repo);
+        removeMutex("./.server_repos"); // Remove mutex
+        return;
+    }
+    else
+    {
+        printf("%s directory has been created.\n", repo);
+    }
+    
+    removeMutex("./.server_repos"); // Remove mutex
+}

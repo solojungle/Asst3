@@ -135,7 +135,7 @@ struct files_type *initializeFileNode(char *filename, int nameLength, char *file
     strcpy(temporary->filename, filename);
     
     temporary->file = file;
-    temporary->fileLength = fileLength;
+    temporary->file_length = fileLength;
     temporary->next = NULL;
     
     return temporary;

@@ -62,11 +62,12 @@ void acceptSocketConnection(struct server_type *server)
     int connection_fd;
     socklen_t clientLength;
     struct sockaddr_in clientAddress;
-    pthread_t thread_id;
     thread_args *args = malloc(sizeof(thread_args));
     
     while (1) // loop to keep accepting connections.
     {
+        pthread_attr_t tattr;
+        pthread_t thread_id;
         clientLength = sizeof(clientAddress);
         connection_fd = accept(server->socket_fd, (struct sockaddr *)&clientAddress, &clientLength); // create new fd for client connection. Wait here for client to connect
         
@@ -91,11 +92,12 @@ void acceptSocketConnection(struct server_type *server)
         
         threads[thread_index] = thread_id; // Update log of threads
         ++thread_index;                    // Increment thread counter
-        
-        pthread_create(&thread_id, NULL, clientThread, (void *)args); // Create new thread for new client
+        pthread_attr_init(&tattr); // Initialize thread attribute
+        pthread_attr_setdetachstate(&tattr,PTHREAD_CREATE_DETACHED); // Set thread attribute to detached
+        pthread_create(&thread_id, &tattr, clientThread, (void *)args); // Create new detached thread for new client
     }
-    pthread_join(thread_id, NULL); // Wait on threads
-    free(args);
+    
+    free(args); // Free thread arguments
     
     return;
 }
@@ -227,6 +229,7 @@ void handleArguments(char *arguments)
         case 5: // push
             break;
         case 6: // create
+            create(tokens[1]);
             break;
         case 7: // destroy
             break;
