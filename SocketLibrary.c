@@ -122,7 +122,16 @@ void getIPAddress(int fd, char *IP)
     return;
 }
 
-// creates a fresh node.
+/*
+ *  initializeFileNode()
+ *  @params:
+ *      char *, file_name.
+ *      int, length of file_name.
+ *      char *, file contents
+ *      int, file contents length.
+ *  @returns: struct files_type *, new node.
+ *  @comments: creates a new file node.
+ */
 struct files_type *initializeFileNode(char *filename, int nameLength, char *file, int fileLength)
 {
     struct files_type *temporary = (struct files_type *)malloc(sizeof(struct files_type));
@@ -132,6 +141,12 @@ struct files_type *initializeFileNode(char *filename, int nameLength, char *file
 
     memset(temporary->file, '\0', strlen(file + 1));
     memset(temporary->filename, '\0', strlen(filename + 1));
+
+    if (temporary->file == NULL || temporary->filename == NULL)
+    {
+        fprintf(stderr, "%sError%s: Malloc failed to allocate memory.\n", RED, RESET);
+        return NULL;
+    }
 
     strcpy(temporary->file, file);
     strcpy(temporary->filename, filename);
@@ -144,6 +159,14 @@ struct files_type *initializeFileNode(char *filename, int nameLength, char *file
     return temporary;
 }
 
+/*
+ *  append()
+ *  @params:
+ *      struct files_type *, new node to append to list.
+ *      struct files_type *, head node of list.
+ *  @returns: struct files_type *, new head of linked list.
+ *  @comments: appends node to linked list.
+ */
 struct files_type *append(struct files_type *new, struct files_type *root)
 {
     if (root == NULL) // if first node.
