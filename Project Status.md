@@ -156,3 +156,8 @@ Status Update - Ali Awari - 4/26/19 @ 2:05PM
 * Added functions which encoded files into a string.
 * Free some malloc'd parts, will still need to error check everything.
 * TODO: Error check, actually send files, free malloc.
+
+Status Update - Ali Awari - 4/27/19 @ 5:15PM
+------------------------------------------------
+* Added comments to functions.
+* Added error messages to functions.

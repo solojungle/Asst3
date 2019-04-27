@@ -163,19 +163,13 @@ struct files_type *append(struct files_type *new, struct files_type *root)
 }
 
 /*
-  Counts the number of digits in a integer.
-
-  SYNOPSIS
-    createFileList()
-      files     - array of strings (pathnames)
-      n         - number of files to check
-
-  DESCRIPTION
-    Takes files pathnames and creates a linked list,, 
-
-  RETURN VALUE
-    The number of digits.
-*/
+ *  createFileList()
+ *  @params:
+ *      int, number of files.
+ *      char **, file paths.
+ *  @returns: struct files_type *, head of linked list.
+ *  @comments: takes files pathnames and creates a linked list.
+ */
 struct files_type *createFileList(char **files, int n)
 {
     struct files_type *root = NULL; // create starting point.
@@ -249,6 +243,14 @@ struct files_type *createFileList(char **files, int n)
     return root;
 }
 
+/*
+ *  sendFiles()
+ *  @params:
+ *      struct files_type *, linked list of files.
+ *      int, file descriptor to send files too.
+ *  @returns: void.
+ *  @comments: takes a linked list of files, and sends an encoded string to client.
+ */
 void sendFiles(struct files_type *files, int fd)
 {
     if (fd == -1)
@@ -258,127 +260,157 @@ void sendFiles(struct files_type *files, int fd)
     }
 
     char *string = createEncodedString(files);
+    if (string == NULL)
+    {
+        fprintf(stderr, "%sError%s: Encoded string return NULL.\n", RED, RESET);
+        return;
+    }
+
     printf("%s\n", string);
     free(string);
 
     return;
 }
 
+/*
+ *  createEncodedString()
+ *  @params: struct files_type *, linked list of files.
+ *  @returns: char *, returns encoded string.
+ *  @comments: iterates thorugh linked list of files, creates two seperate strings simultaneously
+ * and then combines them to form an encoded string.
+ */
 char *createEncodedString(struct files_type *files)
 {
-    if (files == NULL)
+    if (files == NULL) // check to see if LL is empty.
     {
         fprintf(stderr, "%sError%s: Files is NULL.\n", RED, RESET);
         return NULL;
     }
 
-    char *filenames_string = malloc(1);
-    memset(filenames_string, '\0', 1);
-    char *files_string = malloc(1);
-    memset(files_string, '\0', 1);
+    char *all_filenames = malloc(1); // hold all the filenames.
+    char *all_files = malloc(1);     // hold all the actual files.
+    memset(all_filenames, '\0', 1);  // remove junk.
+    memset(all_files, '\0', 1);      // remove junk.
 
-    int file_count = 0;
+    if (all_filenames == NULL || all_files == NULL)
+    {
+        fprintf(stderr, "%sError%s: Malloc failed to allocate memory.\n", RED, RESET);
+        return NULL;
+    }
 
-    struct files_type *cursor = files;
+    int file_count = 0; // holds number of files in linked list.
+
+    struct files_type *cursor = files; // begin looping through list.
     while (cursor != NULL)
     {
-        file_count += 1;
+        file_count += 1; // increment # of files.
 
-        int totalFileLength = strlen(files_string) + cursor->file_length + 1;
+        // allnames.txt + newname.txt + null.
+        int new_allfiles_length = strlen(all_files) + cursor->file_length + 1; // find how long string needs to be to accommodate new file.
 
-        char fileBuffer[totalFileLength];
-        memset(fileBuffer, '\0', totalFileLength);
-        strcpy(fileBuffer, files_string);
-        strcat(fileBuffer, cursor->file);
+        char file_contents[new_allfiles_length];          // buffer that will hold file contents.
+        memset(file_contents, '\0', new_allfiles_length); // remove junk.
+        strcpy(file_contents, all_files);                 // copy old files to buffer.
+        strcat(file_contents, cursor->file);              // concat new file to buffer.
 
-        if (cursor->file_length <= 0)
+        if (cursor->file_length <= 0) // give warning for empty files.
         {
             printf("%sWarning%s: An empty file was encoded: \"%s\".\n", RED, RESET, cursor->filename);
         }
         else
         {
-            files_string = realloc(files_string, totalFileLength);
-            strcpy(files_string, fileBuffer);
+            all_files = realloc(all_files, new_allfiles_length); // increase length of file string.
+            strcpy(all_files, file_contents);                    // overwrite old string with new.
         }
 
-        int buffer_length = digits(cursor->filename_length) + 1 + cursor->filename_length + digits(cursor->file_length) + 1 + 1; // (:, :, '\0')
+        // number of digits of the filename length e.i. 777 -> 3 digits + : + filename + digits of file_length.
+        int encoded_filename_length = digits(cursor->filename_length) + 1 + cursor->filename_length + digits(cursor->file_length) + 1 + 1; // (:, :, '\0')
 
-        char buffer[buffer_length];
-        memset(buffer, '\0', buffer_length);
+        char encoded_filename[encoded_filename_length];          // create string buffer.
+        memset(encoded_filename, '\0', encoded_filename_length); // remove junk.
 
-        char number[65];
-        intToStr(cursor->filename_length, number, 10);
+        char number[65];                               // hold filename_length.
+        intToStr(cursor->filename_length, number, 10); // convert char* to str.
 
-        strcpy(buffer, number);
-        strcat(buffer, ":");
-        strcat(buffer, cursor->filename);
+        strcpy(encoded_filename, number);           // add number.
+        strcat(encoded_filename, ":");              // add ':'.
+        strcat(encoded_filename, cursor->filename); // add filename.
 
-        intToStr(cursor->file_length, number, 10);
-        strcat(buffer, number);
-        strcat(buffer, ":");
+        intToStr(cursor->file_length, number, 10); // convert file_length.
+        strcat(encoded_filename, number);          // add file_length.
+        strcat(encoded_filename, ":");             // add ':'.
 
-        int new_buff = strlen(filenames_string) + strlen(buffer) + 1;
-        char filenameBuffer[new_buff];
-        memset(filenameBuffer, '\0', new_buff);
+        int new_allfilenames_length = strlen(all_filenames) + strlen(encoded_filename) + 1; // length of new allfilesnames
+        char filenames_buffer[new_allfilenames_length];                                     // buffer that will hold filenames.
+        memset(filenames_buffer, '\0', new_allfilenames_length);                            // remove junk.
 
-        strcpy(filenameBuffer, filenames_string);
-        strcat(filenameBuffer, buffer);
+        strcpy(filenames_buffer, all_filenames);    // copy old filenames into buffer.
+        strcat(filenames_buffer, encoded_filename); // add new encoded filename to old.
 
-        filenames_string = realloc(filenames_string, new_buff);
+        all_filenames = realloc(all_filenames, new_allfilenames_length); // realloc all_filenames fit size.
 
-        strcpy(filenames_string, filenameBuffer);
+        strcpy(all_filenames, filenames_buffer); // add filenames_buffer to all_filenames.
 
         struct files_type *temp = cursor;
-        free(cursor->file);
-        free(cursor->filename);
+        free(cursor->file);     // free linkedlist.
+        free(cursor->filename); // free linkedlist.
 
-        cursor = cursor->next;
-        free(temp);
+        cursor = cursor->next; // iterate through list.
+        free(temp);            // free linkedlist.
     }
 
+    // now begin to combine 'all_filenames' + 'all_files', to create final string.
     char numberBuff[65];
     intToStr(file_count, numberBuff, 10);
-    int encoded_length = 5 + digits(file_count) + 1 + strlen(filenames_string) + strlen(files_string) + 1;
+    int encoded_length = 5 + digits(file_count) + 1 + strlen(all_filenames) + strlen(all_files) + 1;
     char *encoded = malloc(encoded_length);
     memset(encoded, '\0', encoded_length);
-    // char encoded[encoded_length];
+
+    if (encoded == NULL)
+    {
+        fprintf(stderr, "%sError%s: Malloc failed to allocate memory.\n", RED, RESET);
+        return NULL;
+    }
+
     strcpy(encoded, "send:");
     strcat(encoded, numberBuff);
     strcat(encoded, ":");
-    strcat(encoded, filenames_string);
-    strcat(encoded, files_string);
+    strcat(encoded, all_filenames); // add first half of encoded string.
+    strcat(encoded, all_files);     // add second half of encoded string.
 
-    free(filenames_string);
-    free(files_string);
+    free(all_filenames); // free temp malloc.
+    free(all_files);     // free temp malloc.
 
     return encoded;
 }
 
 /*
-  Counts the number of digits in a integer.
-
-  SYNOPSIS
-    digits()
-      val     - value to number
-
-  DESCRIPTION
-    Takes any number in base 10, and counts the digits in the number.
-
-  RETURN VALUE
-    The number of digits.
-*/
+ *  digits()
+ *  @params: int, value to be counted.
+ *  @returns: int, number of digits in number.
+ *  @comments: Takes any number in base 10, and counts the digits in the number.
+ */
 int digits(int n)
 {
     int count = 0;
     while (n != 0)
     {
-        n /= 10; // n = n/10
+        n /= 10;
         ++count;
     }
 
     return count;
 }
 
+/*
+ *  intToStr()
+ *  @params:
+ *      int, value to be converted.
+ *      char *, destination for conversion.
+ *      int, base of number i.e 10.
+ *  @returns: char *, converted integer string.
+ *  @comments: converts a number into a string.
+ */
 char *intToStr(long int val, char *dst, int radix)
 {
     char buffer[65];
