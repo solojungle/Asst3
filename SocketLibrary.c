@@ -289,8 +289,16 @@ void sendFiles(struct files_type *files, int fd)
         return;
     }
 
-    printf("%s\n", string);
+    printf("Files have been sent.\n");
+    send(fd, string, strlen(string), 0);
     free(string);
+
+    char buffer[50];
+    memset(buffer, '\0', 50);
+
+    printf("Waiting for response... ");
+    recv(fd, buffer, sizeof(buffer), 0);
+    printf("%s\n", buffer);
 
     return;
 }
@@ -467,3 +475,16 @@ char *intToStr(long int val, char *dst, int radix)
         ;
     return dst - 1;
 }
+
+// // comments
+// void receiveFiles(int fd)
+// {
+//     char input_buffer[50];
+//     memset(input_buffer, '\0', 50);
+
+//     recv(fd, input_buffer, 50, 0);
+
+//     send(fd, "OK.", 3, 0);
+
+//     printf("%s\n", input_buffer);
+// }
