@@ -161,3 +161,8 @@ Status Update - Ali Awari - 4/27/19 @ 5:15PM
 ------------------------------------------------
 * Added comments to functions.
 * Added error messages to functions.
+
+Status Update - Ali Awari - 4/28/19 @ 5:26PM
+------------------------------------------------
+* Fixed error, in SocketLib.c where I malloc `strlen(string + 1)` instead of correctly `(strlen(string) + 1)`
+* Uncommented receivefiles()

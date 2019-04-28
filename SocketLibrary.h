@@ -41,6 +41,7 @@ extern void setSocketOptions(struct server_type *);
 extern void getIPAddress(int, char *);
 extern void createFilesFromStream(char *);
 extern void sendFiles(struct files_type *, int);
+extern void receiveFiles(int fd);
 extern struct files_type *createFileList(char **, int);
 extern struct files_type *append(struct files_type *, struct files_type *);
 extern struct files_type *initializeFileNode(char *, int, char *, int);

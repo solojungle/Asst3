@@ -136,11 +136,11 @@ struct files_type *initializeFileNode(char *filename, int nameLength, char *file
 {
     struct files_type *temporary = (struct files_type *)malloc(sizeof(struct files_type));
 
-    temporary->file = malloc(strlen(file + 1));
-    temporary->filename = malloc(strlen(filename + 1));
+    temporary->file = malloc(strlen(file) + 1);
+    temporary->filename = malloc(strlen(filename) + 1);
 
-    memset(temporary->file, '\0', strlen(file + 1));
-    memset(temporary->filename, '\0', strlen(filename + 1));
+    memset(temporary->file, '\0', strlen(file) + 1);
+    memset(temporary->filename, '\0', strlen(filename) + 1);
 
     if (temporary->file == NULL || temporary->filename == NULL)
     {
@@ -382,12 +382,13 @@ char *createEncodedString(struct files_type *files)
 
         strcpy(all_filenames, filenames_buffer); // add filenames_buffer to all_filenames.
 
-        struct files_type *temp = cursor;
+        struct files_type *next = cursor->next;
+
         free(cursor->file);     // free linkedlist.
         free(cursor->filename); // free linkedlist.
+        free(cursor);           // free linkedlist.
 
-        cursor = cursor->next; // iterate through list.
-        free(temp);            // free linkedlist.
+        cursor = next; // iterate through list.
     }
 
     // now begin to combine 'all_filenames' + 'all_files', to create final string.
@@ -476,15 +477,15 @@ char *intToStr(long int val, char *dst, int radix)
     return dst - 1;
 }
 
-// // comments
-// void receiveFiles(int fd)
-// {
-//     char input_buffer[50];
-//     memset(input_buffer, '\0', 50);
+// comments
+void receiveFiles(int fd)
+{
+    char input_buffer[50];
+    memset(input_buffer, '\0', 50);
 
-//     recv(fd, input_buffer, 50, 0);
+    recv(fd, input_buffer, 50, 0);
 
-//     send(fd, "OK.", 3, 0);
+    send(fd, "OK.\n", 4, 0);
 
-//     printf("%s\n", input_buffer);
-// }
+    printf("%s\n", input_buffer);
+}
