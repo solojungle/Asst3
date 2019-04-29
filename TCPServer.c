@@ -225,16 +225,7 @@ void handleArguments(char *arguments, int fd)
     case 1: // checkout
         break;
     case 2: // update
-    {
-        char *files[10];
-        memset(files, '\0', 10);
-        files[0] = "TEST DIR/text2.txt";
-        files[1] = "TEST DIR/text.txt";
-        files[2] = "TEST DIR/thisisanotherfile.txt";
-        files[3] = "TEST DIR/thisisanotherfile.txt";
-        sendFiles(createFileList(files, 4), fd);
-    }
-    break;
+        break;
     case 3: // upgrade
         break;
     case 4: // commit
