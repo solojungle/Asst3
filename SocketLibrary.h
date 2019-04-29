@@ -30,6 +30,9 @@ struct files_type
     struct files_type *next;
 };
 
+extern struct files_type *decodeString(int);
+extern long findDigit(int);
+
 extern char *createEncodedString(struct files_type *);
 extern char *intToStr(long int, char *, int);
 extern int digits(int);

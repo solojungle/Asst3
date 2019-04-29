@@ -248,11 +248,11 @@ struct files_type *createFileList(char **files, int n)
                 fprintf(stderr, "%sWarning%s: File at \"%s\" is empty.\n", RED, RESET, files[index]);
             }
 
-            char buffer[file_length + 1];          // create array (buffer) to hold file.
-            memset(buffer, '\0', file_length + 1); // remove junk memory.
-            read(fd, buffer, file_length);         // place file into buffer.
+            char file_contents[file_length + 1];          // create array (buffer) to hold file.
+            memset(file_contents, '\0', file_length + 1); // remove junk memory.
+            read(fd, file_contents, file_length);         // place file into buffer.
 
-            root = append(initializeFileNode(filename, filename_length, buffer, file_length), root); // create list.
+            root = append(initializeFileNode(filename, filename_length, file_contents, file_length), root); // create list.
         }
 
         if (fd) // don't need to close unopened file.
@@ -264,6 +264,143 @@ struct files_type *createFileList(char **files, int n)
     }
 
     return root;
+}
+
+/*
+ *  receiveFiles()
+ *  @params: int, file descriptor of connection.
+ *  @returns: void.
+ *  @comments: receives encoded string, and decodes it.
+ */
+void receiveFiles(int fd)
+{
+    char command_buffer[6];
+    memset(command_buffer, '\0', 6);
+
+    printf("Receiving files...\n");
+
+    if (recv(fd, command_buffer, sizeof(command_buffer) - 1, 0) == -1)
+    {
+        send(fd, "ERR.", 4, 0); // reply to sender saying we received command.
+        fprintf(stderr, "%sError%s: There was an error receiving message from socket.\n", RED, RESET);
+        return;
+    }
+
+    send(fd, "OK.", 3, 0); // reply to sender saying we received command.
+
+    if (strcmp(command_buffer, "send:") == 0)
+    {
+        struct files_type *files = decodeString(fd); // decode string.
+    }
+    else
+    {
+        fprintf(stderr, "%sError%s: Encoded string was sent incorrectly.\n", RED, RESET);
+        return;
+    }
+
+    return;
+}
+
+struct files_type *decodeString(int fd)
+{
+    if (fd == -1)
+    {
+        fprintf(stderr, "%sError%s: File descriptor is invalid.\n", RED, RESET);
+        return;
+    }
+
+    int numOfFiles;
+    if ((numOfFiles = findDigit(fd)) == -1)
+    {
+        fprintf(stderr, "%sError%s: Couldn't find beginning number in encoded string.\n", RED, RESET);
+        return;
+    }
+
+    struct files_type *root = NULL; // create starting point.
+    while (numOfFiles != 0)
+    {
+        long filename_length = findDigit(fd); // filename length.
+
+        char filename[filename_length + 1];          // holds filename.
+        memset(filename, '\0', filename_length + 1); // remove junk.
+
+        if (recv(fd, filename, filename_length, 0) == -1) // read entire filename.
+        {
+            fprintf(stderr, "%sError%s: There was an error receiving message from socket.\n", RED, RESET);
+            return;
+        }
+
+        long file_length = findDigit(fd); // find file contents length.
+
+        // wait until all filenames are recorded before getting file contents.
+        root = append(initializeFileNode(filename, filename_length, "null", file_length), root);
+
+        numOfFiles -= 1; // decrement counter.
+    }
+
+    struct files_type *cursor = root;
+    while (cursor != NULL)
+    {
+        char temp[cursor->file_length + 1];
+        memset(temp, '\0', cursor->file_length + 1);
+
+        if (recv(fd, temp, cursor->file_length, 0) == -1) // read entire file
+        {
+            fprintf(stderr, "%sError%s: There was an error receiving message from socket.\n", RED, RESET);
+            return;
+        }
+
+        cursor->file = realloc(cursor->file, cursor->file_length + 1);
+        memset(cursor->file, '\0', cursor->file_length + 1);
+        strcpy(cursor->file, temp);
+
+        cursor = cursor->next;
+    }
+
+    return root;
+}
+
+long findDigit(int fd)
+{
+    if (fd == -1)
+    {
+        fprintf(stderr, "%sError%s: File descriptor is invalid.\n", RED, RESET);
+        return;
+    }
+
+    char *digit_buffer = malloc(1);
+
+    if (digit_buffer == NULL)
+    {
+        fprintf(stderr, "%sError%s: Malloc failed to allocate memory.\n", RED, RESET);
+        return -1;
+    }
+
+    memset(digit_buffer, '\0', 1);
+
+    char c[2];          // current char.
+    memset(c, '\0', 2); // remove junk.
+
+    int i = 1; // string + '\0'.
+    while (strcmp(c, ":") != 0)
+    {
+        i += 1;
+
+        if (recv(fd, c, 1, 0) == -1)
+        {
+            fprintf(stderr, "%sError%s: There was an error receiving message from socket.\n", RED, RESET);
+            return;
+        }
+
+        digit_buffer = realloc(digit_buffer, i);
+        strcat(digit_buffer, c);
+    }
+
+    char *end;
+    long number = strtol(digit_buffer, &end, 10);
+    free(digit_buffer);
+
+    return number;
 }
 
 /*
@@ -293,12 +430,16 @@ void sendFiles(struct files_type *files, int fd)
     send(fd, string, strlen(string), 0);
     free(string);
 
-    char buffer[50];
-    memset(buffer, '\0', 50);
+    char response_buff[5]; // buff for err. or ok.
+    memset(response_buff, '\0', 5);
 
-    printf("Waiting for response... ");
-    recv(fd, buffer, sizeof(buffer), 0);
-    printf("%s\n", buffer);
+    printf("Waiting for sender response... ");
+    if (recv(fd, response_buff, sizeof(response_buff), 0) == -1)
+    {
+        fprintf(stderr, "%sError%s: There was an error receiving message from socket.\n", RED, RESET);
+        return;
+    }
+    printf("%s\n", response_buff);
 
     return;
 }
@@ -320,14 +461,15 @@ char *createEncodedString(struct files_type *files)
 
     char *all_filenames = malloc(1); // hold all the filenames.
     char *all_files = malloc(1);     // hold all the actual files.
-    memset(all_filenames, '\0', 1);  // remove junk.
-    memset(all_files, '\0', 1);      // remove junk.
 
     if (all_filenames == NULL || all_files == NULL)
     {
         fprintf(stderr, "%sError%s: Malloc failed to allocate memory.\n", RED, RESET);
         return NULL;
     }
+
+    memset(all_filenames, '\0', 1); // remove junk.
+    memset(all_files, '\0', 1);     // remove junk.
 
     int file_count = 0; // holds number of files in linked list.
 
@@ -475,17 +617,4 @@ char *intToStr(long int val, char *dst, int radix)
     while ((*dst++ = *p++) != 0)
         ;
     return dst - 1;
-}
-
-// comments
-void receiveFiles(int fd)
-{
-    char input_buffer[50];
-    memset(input_buffer, '\0', 50);
-
-    recv(fd, input_buffer, 50, 0);
-
-    send(fd, "OK.\n", 4, 0);
-
-    printf("%s\n", input_buffer);
 }

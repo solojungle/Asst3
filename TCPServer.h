@@ -12,7 +12,7 @@ typedef struct node // struct holding arguments to be used in thread function.
  **/
 void acceptSocketConnection(struct server_type *);
 void handleClientInput(int);
-void handleArguments(char *);
+void handleArguments(char *, int);
 void *clientThread(void *);
 void clean(void);
 void sigIntHandler(int);

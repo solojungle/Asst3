@@ -164,9 +164,15 @@ Status Update - Ali Awari - 4/27/19 @ 5:15PM
 
 Status Update - Ali Awari - 4/28/19 @ 5:26PM
 ------------------------------------------------
-* Fixed error, in SocketLib.c where I malloc `strlen(string + 1)` instead of correctly `(strlen(string) + 1)`
-* Uncommented receivefiles()
+* Fixed error, in SocketLib.c where I malloc `strlen(string + 1)` instead of correctly `(strlen(string) + 1)`.
+* Uncommented receivefiles().
 
 Status Update - Dennis Kager - 4/28/19 @ 9:44PM
 ------------------------------------------------
-* Modified create() to now include the local creation of repos
+* Modified create() to now include the local creation of repos.
+
+Status Update - Ali Awari - 4/28/19 @ 10:27PM
+------------------------------------------------
+* Finished sending/receiving files.
+* Changed 'OK.' and 'ERR.' buffers to reflect smaller messages.
+* TODO: add comments.
