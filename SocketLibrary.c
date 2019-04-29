@@ -270,16 +270,16 @@ struct files_type *createFileList(char **files, int n)
  *  receiveFiles()
  *  @params: int, file descriptor of connection.
  *  @returns: void.
- *  @comments: receives encoded string, and decodes it.
+ *  @comments: receives encoded string, decodes it, then creates files.
  */
 void receiveFiles(int fd)
 {
-    char command_buffer[6];
-    memset(command_buffer, '\0', 6);
+    char command_buffer[6];          // get first word in string e.i "send".
+    memset(command_buffer, '\0', 6); // remove junk.
 
     printf("Receiving files...\n");
 
-    if (recv(fd, command_buffer, sizeof(command_buffer) - 1, 0) == -1)
+    if (recv(fd, command_buffer, sizeof(command_buffer) - 1, 0) == -1) // read first word
     {
         send(fd, "ERR.", 4, 0); // reply to sender saying we received command.
         fprintf(stderr, "%sError%s: There was an error receiving message from socket.\n", RED, RESET);
@@ -288,7 +288,7 @@ void receiveFiles(int fd)
 
     send(fd, "OK.", 3, 0); // reply to sender saying we received command.
 
-    if (strcmp(command_buffer, "send:") == 0)
+    if (strcmp(command_buffer, "send:") == 0) // check to make sure correct string was given.
     {
         struct files_type *files = decodeString(fd); // decode string.
     }
@@ -301,23 +301,29 @@ void receiveFiles(int fd)
     return;
 }
 
+/*
+ *  decodeString()
+ *  @params: int, file descriptor of connection.
+ *  @returns: struct files_type *, a list of files.
+ *  @comments: receives encoded string, and decodes it.
+ */
 struct files_type *decodeString(int fd)
 {
-    if (fd == -1)
+    if (fd == -1) // check for invalid file descriptor
     {
         fprintf(stderr, "%sError%s: File descriptor is invalid.\n", RED, RESET);
         return;
     }
 
-    int numOfFiles;
-    if ((numOfFiles = findDigit(fd)) == -1)
+    int numberOfFiles; // number of files
+    if ((numberOfFiles = findDigit(fd)) == -1)
     {
         fprintf(stderr, "%sError%s: Couldn't find beginning number in encoded string.\n", RED, RESET);
         return;
     }
 
     struct files_type *root = NULL; // create starting point.
-    while (numOfFiles != 0)
+    while (numberOfFiles != 0) // while there exists files 
     {
         long filename_length = findDigit(fd); // filename length.
 
@@ -335,11 +341,11 @@ struct files_type *decodeString(int fd)
         // wait until all filenames are recorded before getting file contents.
         root = append(initializeFileNode(filename, filename_length, "null", file_length), root);
 
-        numOfFiles -= 1; // decrement counter.
+        numberOfFiles -= 1; // decrement counter.
     }
 
     struct files_type *cursor = root;
-    while (cursor != NULL)
+    while (cursor != NULL) // add file contents to files.
     {
         char temp[cursor->file_length + 1];
         memset(temp, '\0', cursor->file_length + 1);
@@ -350,9 +356,9 @@ struct files_type *decodeString(int fd)
             return;
         }
 
-        cursor->file = realloc(cursor->file, cursor->file_length + 1);
-        memset(cursor->file, '\0', cursor->file_length + 1);
-        strcpy(cursor->file, temp);
+        cursor->file = realloc(cursor->file, cursor->file_length + 1); // realloc to file content size.
+        memset(cursor->file, '\0', cursor->file_length + 1); // remove previous contents.
+        strcpy(cursor->file, temp); // place correct content.
 
         cursor = cursor->next;
     }
@@ -360,6 +366,12 @@ struct files_type *decodeString(int fd)
     return root;
 }
 
+/*
+ *  findDigit()
+ *  @params: int, file descriptor of connection.
+ *  @returns: long, 
+ *  @comments: finds digit in encoded string and returns it as a long.
+ */
 long findDigit(int fd)
 {
     if (fd == -1)
@@ -368,7 +380,7 @@ long findDigit(int fd)
         return;
     }
 
-    char *digit_buffer = malloc(1);
+    char *digit_buffer = malloc(1); // unknown number of digits.
 
     if (digit_buffer == NULL)
     {
@@ -376,29 +388,29 @@ long findDigit(int fd)
         return -1;
     }
 
-    memset(digit_buffer, '\0', 1);
+    memset(digit_buffer, '\0', 1); // remove junk
 
-    char c[2];          // current char.
+    char c[2];          // current char + null.
     memset(c, '\0', 2); // remove junk.
 
     int i = 1; // string + '\0'.
-    while (strcmp(c, ":") != 0)
+    while (strcmp(c, ":") != 0) // while char is  not delim.
     {
         i += 1;
 
-        if (recv(fd, c, 1, 0) == -1)
+        if (recv(fd, c, 1, 0) == -1) // read string.
         {
             fprintf(stderr, "%sError%s: There was an error receiving message from socket.\n", RED, RESET);
             return;
         }
 
-        digit_buffer = realloc(digit_buffer, i);
-        strcat(digit_buffer, c);
+        digit_buffer = realloc(digit_buffer, i); // digit is now 1 larger.
+        strcat(digit_buffer, c); // add digit to string.
     }
 
-    char *end;
-    long number = strtol(digit_buffer, &end, 10);
-    free(digit_buffer);
+    char *end; // used for strtol.
+    long number = strtol(digit_buffer, &end, 10); // convert string to long.
+    free(digit_buffer); // free malloc
 
     return number;
 }

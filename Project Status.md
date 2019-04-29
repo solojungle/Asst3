@@ -175,4 +175,7 @@ Status Update - Ali Awari - 4/28/19 @ 10:27PM
 ------------------------------------------------
 * Finished sending/receiving files.
 * Changed 'OK.' and 'ERR.' buffers to reflect smaller messages.
-* TODO: add comments.
+
+Status Update - Ali Awari - 4/28/19 @ 1:38AM
+------------------------------------------------
+* Added comments to SocketLib.c
