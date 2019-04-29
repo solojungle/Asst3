@@ -323,7 +323,7 @@ struct files_type *decodeString(int fd)
     }
 
     struct files_type *root = NULL; // create starting point.
-    while (numberOfFiles != 0) // while there exists files 
+    while (numberOfFiles != 0)      // while there exists files
     {
         long filename_length = findDigit(fd); // filename length.
 
@@ -357,8 +357,8 @@ struct files_type *decodeString(int fd)
         }
 
         cursor->file = realloc(cursor->file, cursor->file_length + 1); // realloc to file content size.
-        memset(cursor->file, '\0', cursor->file_length + 1); // remove previous contents.
-        strcpy(cursor->file, temp); // place correct content.
+        memset(cursor->file, '\0', cursor->file_length + 1);           // remove previous contents.
+        strcpy(cursor->file, temp);                                    // place correct content.
 
         cursor = cursor->next;
     }
@@ -393,7 +393,7 @@ long findDigit(int fd)
     char c[2];          // current char + null.
     memset(c, '\0', 2); // remove junk.
 
-    int i = 1; // string + '\0'.
+    int i = 1;                  // string + '\0'.
     while (strcmp(c, ":") != 0) // while char is  not delim.
     {
         i += 1;
@@ -405,12 +405,12 @@ long findDigit(int fd)
         }
 
         digit_buffer = realloc(digit_buffer, i); // digit is now 1 larger.
-        strcat(digit_buffer, c); // add digit to string.
+        strcat(digit_buffer, c);                 // add digit to string.
     }
 
-    char *end; // used for strtol.
+    char *end;                                    // used for strtol.
     long number = strtol(digit_buffer, &end, 10); // convert string to long.
-    free(digit_buffer); // free malloc
+    free(digit_buffer);                           // free malloc
 
     return number;
 }
