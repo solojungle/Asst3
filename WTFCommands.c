@@ -708,18 +708,30 @@ void removeMutex(char *repo){
 
 void create(char *repo){
     DIR *sr = opendir("./.server_repos");
-    char *path = (char*)malloc((strlen(repo) + 17) * sizeof(char));
-    if(path == NULL){
+    DIR *cr = opendir("./Projects");
+    
+    char *serverPath = (char*)malloc((strlen(repo) + 17) * sizeof(char));
+    if(serverPath == NULL){
         fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
         return;
     }
-    strcpy(path, "./.server_repos/");
-    strcat(path, repo);
-    strcat(path, "\0");
+    char *clientPath = (char*)malloc((strlen(repo) + 12) * sizeof(char));
+    if(clientPath == NULL){
+        fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
+        return;
+    }
+    
+    strcpy(serverPath, "./.server_repos/"); // Setup path for server
+    strcat(serverPath, repo);
+    strcat(serverPath, "\0");
+    
+    strcpy(clientPath, "./Projects/"); // Setup path for client
+    strcat(clientPath, repo);
+    strcat(clientPath, "\0");
     
     if(sr == NULL){ // Check to see if the directory .server_repos exists
         if (mkdir(".server_repos", S_IRWXU | S_IRWXG | S_IRWXO) == -1){ // grant all rights to everyone (mode 0777 = rwxrwxrwx).
-            fprintf(stderr, "%sError%s: Mkdir() has failed to create .server_repos folder.\n", RED, RESET);
+            fprintf(stderr, "%sError%s: .server_repos folder could not be created..\n", RED, RESET);
             return;
         }
         else
@@ -731,16 +743,52 @@ void create(char *repo){
     checkStatus("./.server_repos"); // If repo is occupied, will make function wait until it is free to use
     createMutex("./.server_repos"); // Lock down repository so no one can modify it
     
-    if (mkdir(path, S_IRWXU | S_IRWXG | S_IRWXO) == -1) // grant all rights to everyone (mode 0777 = rwxrwxrwx).
+    if (mkdir(serverPath, S_IRWXU | S_IRWXG | S_IRWXO) == -1) // grant all rights to everyone (mode 0777 = rwxrwxrwx).
     {
-        fprintf(stderr, "%sError%s: Mkdir() has failed to create %s folder.\n", RED, RESET, repo);
+        fprintf(stderr, "%sError%s: %s folder already exists.\n", RED, RESET, repo);
         removeMutex("./.server_repos"); // Remove mutex
         return;
     }
     else
     {
-        printf("%s directory has been created.\n", repo);
+        printf("%s folder has been created.\n", repo);
     }
     
     removeMutex("./.server_repos"); // Remove mutex
+    
+    if(cr == NULL){ // Check to see if the directory .server_repos exists
+        if (mkdir("Projects", S_IRWXU | S_IRWXG | S_IRWXO) == -1){ // grant all rights to everyone (mode 0777 = rwxrwxrwx).
+            fprintf(stderr, "%sError%s: Projects folder could not be created.\n", RED, RESET);
+            return;
+        }
+        else
+            printf("Projects folder has been created.\n");
+    }
+    else
+        closedir(cr);
+    
+    if (mkdir(clientPath, S_IRWXU | S_IRWXG | S_IRWXO) == -1) // grant all rights to everyone (mode 0777 = rwxrwxrwx).
+    {
+        fprintf(stderr, "%sError%s: %s folder already exists.\n", RED, RESET, repo);
+        
+        return;
+    }
+    else
+    {
+        printf("%s folder has been created.\n", repo);
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
