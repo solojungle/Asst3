@@ -288,7 +288,12 @@ void receiveFiles(int fd)
 
     send(fd, "OK.", 3, 0); // reply to sender saying we received command.
 
-    if (strcmp(command_buffer, "send:") == 0) // check to make sure correct string was given.
+    if (strlen(command_buffer) == 0) // when thread/socket closes it sends an empty string
+    {
+        fprintf(stderr, "%sError%s: Returned string was empty, an error occured on server.\n", RED, RESET);
+        return;
+    }
+    else if (strcmp(command_buffer, "send:") == 0) // check to make sure correct string was given.
     {
         struct files_type *files = decodeString(fd); // decode string.
     }
