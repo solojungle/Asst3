@@ -56,6 +56,6 @@ void printManifest(struct project_manifest *); // For Debugging
 void checkStatus(char *);        // Checks to see if the
 void createMutex(char *);        // Creates a project mutex
 void removeMutex(char *);        // Removes a file mutex
-void create(char *);            // Creates repository for both server and client
+void create(char *, int);        // Creates repository for both server and client
 
 #endif /* _WTFCOMMANDS_h */

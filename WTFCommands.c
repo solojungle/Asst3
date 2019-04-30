@@ -1,4 +1,6 @@
 #include "WTFCommands.h"
+#include "SocketLibrary.h"
+
 
 /**
  *  makeDirectory()
@@ -160,7 +162,7 @@ void manageManifest(char* projectName){
     struct project_manifest *newManifest = NULL;
     struct project_manifest *oldManifest = NULL;
     struct project_manifest *updatedManifest = NULL;
-    char *projectPath = (char*)malloc((strlen(projectName) + 13) * sizeof(char));
+    char *projectPath = (char*)malloc((strlen(projectName) + 60) * sizeof(char));
     if(projectPath == NULL){
         fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
         return;
@@ -171,8 +173,8 @@ void manageManifest(char* projectName){
         return;
     }
     
-    strcpy(projectPath, "./");
-    strcat(projectPath, projectName);
+    //  strcpy(projectPath, "./");
+    strcpy(projectPath, projectName);
     strcat(projectPath, "/");
     strcpy(dirPath, projectPath);
     strcat(dirPath, "\0");
@@ -706,16 +708,17 @@ void removeMutex(char *repo){
     remove(path);
 }
 
-void create(char *repo){
-    DIR *sr = opendir("./.server_repos");
-    DIR *cr = opendir("./Projects");
+void create(char *repo, int fd){
+    DIR *sr = opendir("./.server_repos"); // Open directory for server projects
+    DIR *cr = opendir("./Projects"); // Open directory for client projects
+    char **files; // Will hold the file path for the server manifest to send to client
     
-    char *serverPath = (char*)malloc((strlen(repo) + 17) * sizeof(char));
+    char *serverPath = (char*)malloc((strlen(repo) + 17) * sizeof(char)); // Create path on server side for new repo
     if(serverPath == NULL){
         fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
         return;
     }
-    char *clientPath = (char*)malloc((strlen(repo) + 12) * sizeof(char));
+    char *clientPath = (char*)malloc((strlen(repo) + 12) * sizeof(char)); // Create path on client side for new repo
     if(clientPath == NULL){
         fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
         return;
@@ -728,6 +731,15 @@ void create(char *repo){
     strcpy(clientPath, "./Projects/"); // Setup path for client
     strcat(clientPath, repo);
     strcat(clientPath, "\0");
+    
+    files = malloc((strlen(serverPath) + 11) * sizeof(char));
+    if(files == NULL){
+        fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
+        return;
+    }
+    files[0] = malloc((strlen(serverPath) + 11) * sizeof(char)); // Setup the path to the server manifest to send send to client
+    strcpy(files[0], serverPath);
+    strcat(files[0], "/.manifest\0");
     
     if(sr == NULL){ // Check to see if the directory .server_repos exists
         if (mkdir(".server_repos", S_IRWXU | S_IRWXG | S_IRWXO) == -1){ // grant all rights to everyone (mode 0777 = rwxrwxrwx).
@@ -752,11 +764,13 @@ void create(char *repo){
     else
     {
         printf("%s folder has been created.\n", repo);
+        manageManifest(serverPath); // Creates the deafult manifest for the new server repo
+        sendFiles(createFileList(files, 1), fd); // SENDING MANIFEST FILE FROM SERVER TO CLIENT THROUGH THE CLIENT'S FD
     }
     
     removeMutex("./.server_repos"); // Remove mutex
     
-    if(cr == NULL){ // Check to see if the directory .server_repos exists
+    if(cr == NULL){ // Check to see if the directory Projects exists
         if (mkdir("Projects", S_IRWXU | S_IRWXG | S_IRWXO) == -1){ // grant all rights to everyone (mode 0777 = rwxrwxrwx).
             fprintf(stderr, "%sError%s: Projects folder could not be created.\n", RED, RESET);
             return;
