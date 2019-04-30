@@ -253,6 +253,8 @@ void sendArgument(char *argument)
     }
     printf("%s\n", response_buff);
 
+    receiveFiles(server.socket_fd); // MUST BE HERE.
+
     close(server.socket_fd);
 
     printf("Disconnected from server.\n\n");
