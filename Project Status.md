@@ -179,3 +179,8 @@ Status Update - Ali Awari - 4/28/19 @ 10:27PM
 Status Update - Ali Awari - 4/28/19 @ 1:38AM
 ------------------------------------------------
 * Added comments to SocketLib.c
+
+Status Update - Dennis Kager - 4/30/19 @ 1:48AM
+------------------------------------------------
+* Sent .manifest file from server during create() but having a hard time figuring out how to recieve it in the client to add the file locally
+* Integrated manifest functions to be more universal with server and client
