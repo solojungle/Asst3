@@ -188,3 +188,11 @@ Status Update - Dennis Kager - 4/30/19 @ 1:48AM
 Status Update - Ali Awari - 4/30/19 @ 1:49AM
 ------------------------------------------------
 * Added second error message to SocketLib.c recvFiles().
+
+Status Update - Dennis Kager - 4/30/19 @ 10:42PM
+------------------------------------------------
+* Slight overhaul on input handling in Client.c to separate what the client should expect (messages, files, etc.)
+* Added many messages for the client to recieve from server for create() and destroy(), which brings me to....
+* NEW COMMAND: Destroy() will wipe the contents of a directory on the server-side, then remove() the directory (hence the name, destroy)
+* Added some more comments here and there
+* Probably more I forgot to mention. Consider them "easter eggs" if you come across them before I can remember what else
