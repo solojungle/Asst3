@@ -196,3 +196,8 @@ Status Update - Dennis Kager - 4/30/19 @ 10:42PM
 * NEW COMMAND: Destroy() will wipe the contents of a directory on the server-side, then remove() the directory (hence the name, destroy)
 * Added some more comments here and there
 * Probably more I forgot to mention. Consider them "easter eggs" if you come across them before I can remember what else
+
+Status Update - Dennis Kager - 5/01/19 @ 7:45PM
+------------------------------------------------
+* Added outputFiles() on socketLibrary.c, which now creates the files from the file struct
+* Modifed some function definitions. For example, in recieveFiles(), I added a new parameter (called mode) to distinguish between the server and the client calling it
