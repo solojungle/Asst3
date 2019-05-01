@@ -179,6 +179,7 @@ void handleArguments(int argc, char *argv[])
     }
 
 	strcpy(command, string); // Copy command to handle it on client side
+	char *repo = argv[2];
 	
     int i = 2;
     while (argv[i] != NULL)
@@ -189,7 +190,7 @@ void handleArguments(int argc, char *argv[])
         i += 1;
     }
     
-    sendArgument(string, command);
+    sendArgument(string, command, repo);
 
     return;
 }
@@ -201,7 +202,7 @@ void handleArguments(int argc, char *argv[])
  *  @comments: attempts a connection to server, sends argument to server,
  * tries every 3 seconds, on user to cancel.
  **/
-void sendArgument(char *argument, char *command)
+void sendArgument(char *argument, char *command, char *repo)
 {
     struct server_info *serverInfo = getServerConfig(); // get IP + Port from config.
 
@@ -281,7 +282,7 @@ void sendArgument(char *argument, char *command)
     	recv(server.socket_fd, commandResponse, sizeof(commandResponse), 0);
     	printf("%s%s%s", YELLOW, commandResponse, RESET);
     	memset(response_buff, '\0', sizeof(response_buff));
-    	receiveFiles(server.socket_fd); // MUST BE HERE.
+    	receiveFiles(server.socket_fd, repo, 1); // 1 indicates that the client is receiving
     }
     else if(strcmp(command, "7") == 0){ // Destroy
     	recv(server.socket_fd, commandResponse, sizeof(commandResponse), 0);

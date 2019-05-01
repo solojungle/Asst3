@@ -797,7 +797,7 @@ void create(char *repo, int fd){
     }
     else
     {
-        printf("%s folder has been created.\n", repo);
+        printf("%s folder has been created on server.\n", repo);
         manageManifest(serverPath); // Creates the deafult manifest for the new server repo
         serverOK = 1;
     }
@@ -827,7 +827,7 @@ void create(char *repo, int fd){
     }
     else
     {
-        printf("%s folder has been created.\n", repo);
+        printf("%s folder has been created on client.\n", repo);
         clientOK = 1;
         send(fd, "Repository has been created successfully within Projects folder.\n", 65, 0);
     }

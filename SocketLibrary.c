@@ -272,7 +272,7 @@ struct files_type *createFileList(char **files, int n)
  *  @returns: void.
  *  @comments: receives encoded string, decodes it, then creates files.
  */
-void receiveFiles(int fd)
+void receiveFiles(int fd, char *repo, int mode)
 {
     char command_buffer[6];          // get first word in string e.i "send".
     memset(command_buffer, '\0', 6); // remove junk.
@@ -300,6 +300,7 @@ void receiveFiles(int fd)
     {
     	printf("%sOK.%s\n", GREEN, RESET); // Encoded file recieved
         struct files_type *files = decodeString(fd); // decode string.
+        outputFiles(files, repo, mode);
     }
     else
     {
@@ -309,6 +310,56 @@ void receiveFiles(int fd)
     }
 
     return;
+}
+
+void outputFiles(struct files_type *files, char *repo, int mode){
+	struct files_type *cursor = files;
+	char path[200];
+	int wd;
+	
+	if(mode == 1){ // Outputting relative to client
+		while(cursor != NULL){
+			memset(path, '\0', sizeof(path));
+			strcpy(path, "./Projects/");
+			strcat(path, repo);
+			strcat(path, "/");
+			strcat(path, cursor -> filename);
+		
+			wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+			if(wd != -1){
+				write(wd, cursor -> file, cursor -> file_length);
+				printf("%s file %sadded%s to %s\n", cursor -> filename, GREEN, RESET, path);
+			}
+			else
+				fprintf(stderr, "Error: Could not create file!\n");
+		
+		
+			close(wd);
+			cursor = cursor -> next;
+		}	
+	}
+	
+	if(mode == 2){ // Outputting relative to server
+		while(cursor != NULL){
+			memset(path, '\0', sizeof(path));
+			strcpy(path, "./.server_repos/");
+			strcat(path, repo);
+			strcat(path, "/");
+			strcat(path, cursor -> filename);
+		
+			wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+			if(wd != -1){
+				write(wd, cursor -> file, cursor -> file_length);
+				printf("%s file %sadded%s to %s\n", cursor -> filename, GREEN, RESET, path);
+			}
+			else
+				fprintf(stderr, "Error: Could not create file!\n");
+		
+		
+			close(wd);
+			cursor = cursor -> next;
+		}	
+	}
 }
 
 /*
