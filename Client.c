@@ -282,7 +282,6 @@ void sendArgument(char *argument, char *command)
     	printf("%s%s%s", YELLOW, commandResponse, RESET);
     	memset(response_buff, '\0', sizeof(response_buff));
     	receiveFiles(server.socket_fd); // MUST BE HERE.
-    	recv(server.socket_fd, commandResponse, sizeof(response_buff), 0);
     }
     else if(strcmp(command, "7") == 0){ // Destroy
     	recv(server.socket_fd, commandResponse, sizeof(commandResponse), 0);
