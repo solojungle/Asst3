@@ -4,11 +4,11 @@ all: compileServer compileClient clean run
 
 # compiles server includes, socket_lib, and core_commands
 compileServer: TCPServer.c TCPServer.h SocketLibrary.o WTFCommands.o
-	gcc $(CFLAGS) -o WTF TCPServer.c SocketLibrary.o WTFCommands.o -lpthread -lssl -lcrypto
+	gcc $(CFLAGS) -o WTFserver TCPServer.c SocketLibrary.o WTFCommands.o -lpthread -lssl -lcrypto
 
 # compiles client includes, socket_lib, and core_commands
 compileClient: Client.c Client.h SocketLibrary.o WTFCommands.o
-	gcc $(CFLAGS) -o client Client.c SocketLibrary.o WTFCommands.o -lssl -lcrypto
+	gcc $(CFLAGS) -o WTF Client.c SocketLibrary.o WTFCommands.o -lssl -lcrypto
 
 # compile socket_lib
 SocketLibrary.o: SocketLibrary.c SocketLibrary.h
@@ -23,4 +23,4 @@ clean:
 	-rm -f *.h.gch
 
 run:
-	./WTF 9418
+	./WTFserver 9418
