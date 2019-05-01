@@ -277,28 +277,33 @@ void receiveFiles(int fd)
     char command_buffer[6];          // get first word in string e.i "send".
     memset(command_buffer, '\0', 6); // remove junk.
 
-    printf("Receiving files...\n");
+    printf("Receiving files...");
 
     if (recv(fd, command_buffer, sizeof(command_buffer) - 1, 0) == -1) // read first word
     {
-        send(fd, "ERR.", 4, 0); // reply to sender saying we received command.
+       // send(fd, "ERR.", 4, 0); // reply to sender saying we received command.
+        printf("%sERR.%s\n", RED, RESET); // Error
         fprintf(stderr, "%sError%s: There was an error receiving message from socket.\n", RED, RESET);
         return;
     }
 
-    send(fd, "OK.", 3, 0); // reply to sender saying we received command.
+    //send(fd, "OK.", 3, 0); // reply to sender saying we received command. // Wouldn't actually send message to client.
 
     if (strlen(command_buffer) == 0) // when thread/socket closes it sends an empty string
     {
-        fprintf(stderr, "%sError%s: Returned string was empty, an error occured on server.\n", RED, RESET);
+        //fprintf(stderr, "%sError%s: Returned string was empty, an error occured on server.\n", RED, RESET);
+        printf("%sERR.%s\n", RED, RESET); // Error
+        fprintf(stderr, "%sError%s: No files received.\n", RED, RESET);
         return;
     }
     else if (strcmp(command_buffer, "send:") == 0) // check to make sure correct string was given.
     {
+    	printf("%sOK.%s\n", GREEN, RESET); // Encoded file recieved
         struct files_type *files = decodeString(fd); // decode string.
     }
     else
     {
+    	printf("%sERR.%s\n", RED, RESET); // Error
         fprintf(stderr, "%sError%s: Encoded string was sent incorrectly.\n", RED, RESET);
         return;
     }

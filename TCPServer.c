@@ -236,6 +236,7 @@ void handleArguments(char *arguments, int fd)
             create(tokens[1], fd);
             break;
         case 7: // destroy
+        	destroy(tokens[1], fd);
             break;
         case 8: // add
             break;

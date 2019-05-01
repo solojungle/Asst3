@@ -50,3 +50,4 @@ extern struct files_type *append(struct files_type *, struct files_type *);
 extern struct files_type *initializeFileNode(char *, int, char *, int);
 
 #endif /* _SOCKETLIBRARY_h */
+

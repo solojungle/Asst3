@@ -15,7 +15,7 @@
 
 // Forward Declarations
 
-void sendArgument(char *);
+void sendArgument(char *, char *);
 void handleArguments(int, char **);
 
 #endif /* _CLIENT_h */

@@ -21,6 +21,11 @@ void handleArguments(int argc, char *argv[])
 {
     char string[256];                       // could segfault. (Need to dynamically allocate if function is needed).
     memset(string, '\0', (sizeof(string))); // need to memset, or else you get junk characters.
+    char *command = (char*)malloc(3*sizeof(char)); // Separate command for client handling
+    if(command == NULL){
+    	fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
+    	exit(EXIT_FAILURE);
+    }
 
     if (argc < 2) // check to make an argument was passed.
     {
@@ -173,6 +178,8 @@ void handleArguments(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
+	strcpy(command, string); // Copy command to handle it on client side
+	
     int i = 2;
     while (argv[i] != NULL)
     {
@@ -181,8 +188,8 @@ void handleArguments(int argc, char *argv[])
         strcat(string, argv[i]);
         i += 1;
     }
-
-    sendArgument(string);
+    
+    sendArgument(string, command);
 
     return;
 }
@@ -194,7 +201,7 @@ void handleArguments(int argc, char *argv[])
  *  @comments: attempts a connection to server, sends argument to server,
  * tries every 3 seconds, on user to cancel.
  **/
-void sendArgument(char *argument)
+void sendArgument(char *argument, char *command)
 {
     struct server_info *serverInfo = getServerConfig(); // get IP + Port from config.
 
@@ -244,6 +251,8 @@ void sendArgument(char *argument)
 
     char response_buff[5];
     memset(response_buff, '\0', sizeof(response_buff));
+    char commandResponse[500];
+    memset(commandResponse, '\0', sizeof(commandResponse));
 
     printf("\nWaiting for server response... ");
     if (recv(server.socket_fd, response_buff, sizeof(response_buff), 0) == -1)
@@ -252,8 +261,50 @@ void sendArgument(char *argument)
         return;
     }
     printf("%s\n", response_buff);
-
-    receiveFiles(server.socket_fd); // MUST BE HERE.
+    
+    if(strcmp(command, "1") == 0){ // Checkout
+    
+    }
+    else if(strcmp(command, "2") == 0){ // Update
+    
+    }
+    else if(strcmp(command, "3") == 0){ // Upgrade
+    
+    }
+    else if(strcmp(command, "4") == 0){ // Commit
+    
+    }
+    else if(strcmp(command, "5") == 0){ // Push
+    
+    }
+    else if(strcmp(command, "6") == 0){ // Create
+    	recv(server.socket_fd, commandResponse, sizeof(commandResponse), 0);
+    	printf("%s%s%s", YELLOW, commandResponse, RESET);
+    	memset(response_buff, '\0', sizeof(response_buff));
+    	receiveFiles(server.socket_fd); // MUST BE HERE.
+    	recv(server.socket_fd, commandResponse, sizeof(response_buff), 0);
+    }
+    else if(strcmp(command, "7") == 0){ // Destroy
+    	recv(server.socket_fd, commandResponse, sizeof(commandResponse), 0);
+    	printf("%s%s%s", YELLOW, commandResponse, RESET);
+    }
+    else if(strcmp(command, "8") == 0){ // Add
+    
+    }
+    else if(strcmp(command, "9") == 0){ // Remove
+    
+    }
+    else if(strcmp(command, "10") == 0){ // Current Version
+    
+    }
+    else if(strcmp(command, "11") == 0){ // History
+    
+    }
+    else if(strcmp(command, "12") == 0){ // Rollback
+    
+    }
+    else
+    	fprintf(stderr,"Command not found!\n");
 
     close(server.socket_fd);
 

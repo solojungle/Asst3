@@ -708,10 +708,42 @@ void removeMutex(char *repo){
     remove(path);
 }
 
+void removeFiles(char *path){
+	DIR *dd = opendir(path); // Opens a directory and returns a dirctory pointer
+    struct dirent *status = NULL; // Status pointer of type struct dirent
+
+	if(dd != NULL){
+		status = readdir(dd); // readdir() retuns pointer to next directory entry
+		
+		while(status != NULL){ // If directory can be accessed, then keep looping
+            status = readdir(dd); // readdir() retuns pointer to next directory entry
+            
+            if(status == NULL) // If the direcory cannot be accessed, then exit
+            	break;
+                
+            if(status -> d_type != DT_DIR){
+            	int inputLength = (int)strlen(path);
+                    char* filePath = (char*)malloc((strlen(status -> d_name) + inputLength + 2) * sizeof(char));
+                    if(filePath == NULL){
+                        fprintf(stderr,"Error: Malloc failed to allocate memory!\n");
+                        return;
+                    }
+                    strcpy(filePath, path);
+                    strcat(filePath, "/");
+                    strcat(filePath, status -> d_name);
+                    
+                    remove(filePath);
+            }
+        }
+	}
+}
+
 void create(char *repo, int fd){
     DIR *sr = opendir("./.server_repos"); // Open directory for server projects
     DIR *cr = opendir("./Projects"); // Open directory for client projects
     char **files; // Will hold the file path for the server manifest to send to client
+    _Bool clientOK = 0;
+    _Bool serverOK = 0;
     
     char *serverPath = (char*)malloc((strlen(repo) + 17) * sizeof(char)); // Create path on server side for new repo
     if(serverPath == NULL){
@@ -758,6 +790,8 @@ void create(char *repo, int fd){
     if (mkdir(serverPath, S_IRWXU | S_IRWXG | S_IRWXO) == -1) // grant all rights to everyone (mode 0777 = rwxrwxrwx).
     {
         fprintf(stderr, "%sError%s: %s folder already exists.\n", RED, RESET, repo);
+        send(fd, "Error: The project already exists!\n", 35, 0);
+        send(fd, "Please use a different project name.\n", 37, 0);
         removeMutex("./.server_repos"); // Remove mutex
         return;
     }
@@ -765,7 +799,7 @@ void create(char *repo, int fd){
     {
         printf("%s folder has been created.\n", repo);
         manageManifest(serverPath); // Creates the deafult manifest for the new server repo
-        sendFiles(createFileList(files, 1), fd); // SENDING MANIFEST FILE FROM SERVER TO CLIENT THROUGH THE CLIENT'S FD
+        serverOK = 1;
     }
     
     removeMutex("./.server_repos"); // Remove mutex
@@ -773,36 +807,79 @@ void create(char *repo, int fd){
     if(cr == NULL){ // Check to see if the directory Projects exists
         if (mkdir("Projects", S_IRWXU | S_IRWXG | S_IRWXO) == -1){ // grant all rights to everyone (mode 0777 = rwxrwxrwx).
             fprintf(stderr, "%sError%s: Projects folder could not be created.\n", RED, RESET);
+            send(fd, "Error: Projects folder could not be created.\n", 45, 0);
             return;
         }
-        else
+        else{
             printf("Projects folder has been created.\n");
+        }
     }
-    else
+    else{
         closedir(cr);
+    }
     
     if (mkdir(clientPath, S_IRWXU | S_IRWXG | S_IRWXO) == -1) // grant all rights to everyone (mode 0777 = rwxrwxrwx).
     {
-        fprintf(stderr, "%sError%s: %s folder already exists.\n", RED, RESET, repo);
-        
+        fprintf(stderr, "%sError%s: %s folder already exists on the client's side.\n", RED, RESET, repo);
+        send(fd, "Warning: The project already exists locally! Please remove locally.\n", 68, 0);
+        destroy(repo, fd);
         return;
     }
     else
     {
         printf("%s folder has been created.\n", repo);
+        clientOK = 1;
+        send(fd, "Repository has been created successfully within Projects folder.\n", 65, 0);
     }
+    
+    if(clientOK == 1 && serverOK == 1)
+    	sendFiles(createFileList(files, 1), fd); // SENDING MANIFEST FILE FROM SERVER TO CLIENT THROUGH THE CLIENT'S FD
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
+void destroy(char *repo, int fd){
+    DIR *sr = opendir("./.server_repos"); // Open directory for server projects
+    DIR *rsd; // Server repo-to-be-deleted
+    char *deletedMessage = "Project destroyed successfuly! Please remove the project locally\n";
+    char *deleteNotSuccessful = "Error: Project does not exist!\n";
+    
+    char *serverPath = (char*)malloc((strlen(repo) + 17) * sizeof(char)); // Create path on server side for new repo
+    if(serverPath == NULL){
+        fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
+        return;
+    }
+    
+    strcpy(serverPath, "./.server_repos/"); // Setup path for server
+    strcat(serverPath, repo);
+    strcat(serverPath, "\0");
+    
+    if(sr == NULL){ // Check to see if the directory .server_repos exists
+        fprintf(stderr, "Error: Server has no projects!\n");
+    }
+    else
+        closedir(sr);
+    
+    checkStatus("./.server_repos"); // If repo is occupied, will make function wait until it is free to use
+    createMutex("./.server_repos"); // Lock down repository so no one can modify it
+    
+    rsd = opendir(serverPath); // Open the directory-to-be-deleted to see if it exists
+    
+    if (rsd == NULL) // If the directory does not exist
+    {
+        fprintf(stderr, "%sError%s: %s project does not exist.\n", RED, RESET, repo);
+        send(fd, deleteNotSuccessful, strlen(deleteNotSuccessful), 0);
+        removeMutex("./.server_repos"); // Remove mutex
+        return;
+    }
+    else // If the directory exists
+    {
+    	closedir(rsd); // Close the directory-to-be-deleted
+    	removeFiles(serverPath); // Delete all files within the directory
+    	remove(serverPath); // Remove the directory
+        printf("%s project has been destroyed.\n", repo);
+        send(fd, deletedMessage, strlen(deletedMessage), 0);
+    }
+    
+    removeMutex("./.server_repos"); // Remove mutex
+}
 

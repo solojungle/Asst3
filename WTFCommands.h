@@ -8,11 +8,12 @@
 #include <string.h>   // memset, strlen()
 #include <unistd.h>   // close(), write()
 #include <sys/stat.h> // mkdir()
-#include <openssl/sha.h>
+#include <openssl/sha.h> // Hashing
 #include <unistd.h>        // For close()
 #include <errno.h>         // errno
 #include <dirent.h>        // dirent
 #include "SocketLibrary.h" // socket functions
+#include <ftw.h> // Removing directories
 
 #define RESET "\033[0m"
 #define RED "\033[0;31m"
@@ -52,9 +53,11 @@ void freeManList(struct project_manifest *);                                    
 void printManifest(struct project_manifest *);                                                 // For Debugging
 
 // Commands
-void checkStatus(char *); // Checks to see if the
-void createMutex(char *); // Creates a project mutex
-void removeMutex(char *); // Removes a file mutex
-void create(char *, int); // Creates repository for both server and client
+void checkStatus(char *); 		// Checks to see if the repo is free to work on
+void createMutex(char *); 		// Creates a project mutex
+void removeMutex(char *); 		// Removes a file mutex
+void removeFiles(char *);		// Removes files in a directory
+void create(char *, int); 		// Creates repository for both server and client
+void destroy(char *, int);		// Destroys a repository on the server
 
 #endif /* _WTFCOMMANDS_h */
