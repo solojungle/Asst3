@@ -244,7 +244,7 @@ void handleArguments(char *arguments, int fd)
     case 9: // remove
         break;
     case 10: // currentversion
-
+        currentversion(tokens[1], fd);
         break;
     case 11: // history
         break;

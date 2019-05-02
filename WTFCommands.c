@@ -1038,3 +1038,21 @@ void checkout(char *repo, int fd)
         // remove(zipPath);
     }
 }
+
+void currentversion(char *repo, int fd)
+{
+    int length = 14 + strlen(repo) + 11; // .server_repos/ + <project_name> + /.manifest\0
+    char project_path[length];
+    memset(project_path, '\0', length);
+
+    strcpy(project_path, ".server_repos/");
+    strcat(project_path, repo);
+    strcat(project_path, "/.manifest");
+
+    char *files[1];
+    files[0] = project_path;
+
+    sendFiles(createFileList(files, 1), fd); // SENDING MANIFEST FILE FROM SERVER TO CLIENT THROUGH THE CLIENT'S FD
+
+    return;
+}

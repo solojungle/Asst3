@@ -441,8 +441,8 @@ struct files_type *decodeString(int fd)
     struct files_type *cursor = root;
     while (cursor != NULL) // add file contents to files.
     {
-        char temp[cursor->file_length];
-        memset(temp, '\0', cursor->file_length);
+        char temp[cursor->file_length + 1];
+        memset(temp, '\0', cursor->file_length + 1);
 
         if (recv(fd, temp, cursor->file_length, 0) == -1) // read entire file
         {
@@ -450,8 +450,8 @@ struct files_type *decodeString(int fd)
             return;
         }
 
-        cursor->file = realloc(cursor->file, cursor->file_length); // realloc to file content size.
-        memset(cursor->file, '\0', cursor->file_length);           // remove previous contents.
+        cursor->file = realloc(cursor->file, cursor->file_length + 1); // realloc to file content size.
+        memset(cursor->file, '\0', cursor->file_length + 1);           // remove previous contents.
         strcpy(cursor->file, temp);                                // place correct content.
 
         cursor = cursor->next;

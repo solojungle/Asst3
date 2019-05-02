@@ -207,9 +207,14 @@ Status Update - Dennis Kager - 5/02/19 @ 12:02AM
 * Added checkout() to WTFCommands.c
 * There is a bug somewhere with sending/receiving files. I have no problem grabbing the .manifest from a newly created project, however, when doing checkout I cannot open the project.tar.gz file that comes from the server. I do not know where the issue is with it. I intentionally left the project.tar.gz on the server when doing the checkout to compare the client and server copies. Both copies are the same size (in terms of bytes) and should theoretically have the same contents. The tar file I create on the server can be opened, but the client's (sent from server) cannot since it says it is corrupted. When doing checkout, there will be a message on the client-side saying it is decompressing, but it is not actually just yet. Just putting that out there to eliminate confusion.
 
-Status Update - Ali Awari - 5/1/19 @ 2:31AM
+Status Update - Ali Awari - 5/2/19 @ 2:31AM
 ------------------------------------------------
-* Hard reset my repo, 
-* Formatting
-* Changed receiveFiles to return a LinkedList
-* Edited above change in Client.c
+* Hard reset my repo.
+* Formatting.
+* Changed receiveFiles to return a LinkedList.
+* Edited above change in Client.c.
+
+Status Update - Ali Awari - 5/2/19 @ 2:31AM
+------------------------------------------------
+* Implemented currentversion.
+* Fixed a bug in sendFiles where I didn't allocated a NULL term, for file contents.

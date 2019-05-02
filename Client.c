@@ -300,6 +300,8 @@ void sendArgument(char *argument, char *command, char *repo)
     }
     else if (strcmp(command, "10") == 0)
     { // Current Version
+        struct files_type *manifest = receiveFiles(server.socket_fd);
+        printf("%sCurrent version: %s%s\n", YELLOW, strtok(manifest->file, "\n"), RESET);
     }
     else if (strcmp(command, "11") == 0)
     { // History
