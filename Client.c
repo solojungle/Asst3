@@ -264,7 +264,7 @@ void sendArgument(char *argument, char *command, char *repo)
     printf("%s\n", response_buff);
     
     if(strcmp(command, "1") == 0){ // Checkout
-    
+    	receiveFiles(server.socket_fd, repo, 3);
     }
     else if(strcmp(command, "2") == 0){ // Update
     

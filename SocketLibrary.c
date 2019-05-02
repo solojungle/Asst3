@@ -136,10 +136,10 @@ struct files_type *initializeFileNode(char *filename, int nameLength, char *file
 {
     struct files_type *temporary = (struct files_type *)malloc(sizeof(struct files_type));
 
-    temporary->file = malloc(strlen(file) + 1);
+    temporary->file = malloc(sizeof(file));
     temporary->filename = malloc(strlen(filename) + 1);
 
-    memset(temporary->file, '\0', strlen(file) + 1);
+    memset(temporary->file, '\0', sizeof(file));
     memset(temporary->filename, '\0', strlen(filename) + 1);
 
     if (temporary->file == NULL || temporary->filename == NULL)
@@ -234,6 +234,7 @@ struct files_type *createFileList(char **files, int n)
             filename_length = strlen(filename);      // get length of filename.
 
             file_length = lseek(fd, 0, SEEK_END); // find files length with lseek().
+           
             if (file_length == -1)
             {
                 fprintf(stderr, "%sError%s: Lseek failed to find end of file.\n", RED, RESET);
@@ -248,9 +249,9 @@ struct files_type *createFileList(char **files, int n)
                 fprintf(stderr, "%sWarning%s: File at \"%s\" is empty.\n", RED, RESET, files[index]);
             }
 
-            char file_contents[file_length + 1];          // create array (buffer) to hold file.
-            memset(file_contents, '\0', file_length + 1); // remove junk memory.
-            read(fd, file_contents, file_length);         // place file into buffer.
+            char file_contents[file_length];          // create array (buffer) to hold file.
+            memset(file_contents, '\0', file_length); // remove junk memory.
+            read(fd, file_contents, file_length);     // place file into buffer.
 
             root = append(initializeFileNode(filename, filename_length, file_contents, file_length), root); // create list.
         }
@@ -317,7 +318,7 @@ void outputFiles(struct files_type *files, char *repo, int mode){
 	char path[200];
 	int wd;
 	
-	if(mode == 1){ // Outputting relative to client
+	if(mode == 1){ // Outputting files relative to client
 		while(cursor != NULL){
 			memset(path, '\0', sizeof(path));
 			strcpy(path, "./Projects/");
@@ -339,7 +340,7 @@ void outputFiles(struct files_type *files, char *repo, int mode){
 		}	
 	}
 	
-	if(mode == 2){ // Outputting relative to server
+	if(mode == 2){ // Outputting files relative to server
 		while(cursor != NULL){
 			memset(path, '\0', sizeof(path));
 			strcpy(path, "./.server_repos/");
@@ -359,6 +360,32 @@ void outputFiles(struct files_type *files, char *repo, int mode){
 			close(wd);
 			cursor = cursor -> next;
 		}	
+	}
+	
+	if(mode == 3){ // Un-tar files relative to client
+		while(cursor != NULL){
+			memset(path, '\0', sizeof(path));
+			strcpy(path, "./Projects/");
+			strcat(path, cursor -> filename);
+		
+			wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+			if(wd != -1){
+				write(wd, cursor -> file, cursor -> file_length);
+				printf("%s file %sadded%s to %s\n", cursor -> filename, GREEN, RESET, path);
+				printf("%sDeompressing%s %s...\n", YELLOW, RESET, cursor -> filename);
+				
+			}
+			else
+				fprintf(stderr, "Error: Could not create file!\n");
+		
+		
+			close(wd);
+			cursor = cursor -> next;
+		}
+	}
+	
+	if(mode == 4){ // Un-tar files relative to server
+		
 	}
 }
 
@@ -408,8 +435,8 @@ struct files_type *decodeString(int fd)
     struct files_type *cursor = root;
     while (cursor != NULL) // add file contents to files.
     {
-        char temp[cursor->file_length + 1];
-        memset(temp, '\0', cursor->file_length + 1);
+        char temp[cursor->file_length];
+        memset(temp, '\0', cursor->file_length);
 
         if (recv(fd, temp, cursor->file_length, 0) == -1) // read entire file
         {
@@ -417,8 +444,8 @@ struct files_type *decodeString(int fd)
             return;
         }
 
-        cursor->file = realloc(cursor->file, cursor->file_length + 1); // realloc to file content size.
-        memset(cursor->file, '\0', cursor->file_length + 1);           // remove previous contents.
+        cursor->file = realloc(cursor->file, cursor->file_length); // realloc to file content size.
+        memset(cursor->file, '\0', cursor->file_length);           // remove previous contents.
         strcpy(cursor->file, temp);                                    // place correct content.
 
         cursor = cursor->next;
@@ -552,7 +579,7 @@ char *createEncodedString(struct files_type *files)
         file_count += 1; // increment # of files.
 
         // allnames.txt + newname.txt + null.
-        int new_allfiles_length = strlen(all_files) + cursor->file_length + 1; // find how long string needs to be to accommodate new file.
+        int new_allfiles_length = sizeof(all_files) + cursor->file_length + 1; // find how long string needs to be to accommodate new file.
 
         char file_contents[new_allfiles_length];          // buffer that will hold file contents.
         memset(file_contents, '\0', new_allfiles_length); // remove junk.
@@ -609,7 +636,7 @@ char *createEncodedString(struct files_type *files)
     // now begin to combine 'all_filenames' + 'all_files', to create final string.
     char numberBuff[65];
     intToStr(file_count, numberBuff, 10);
-    int encoded_length = 5 + digits(file_count) + 1 + strlen(all_filenames) + strlen(all_files) + 1;
+    int encoded_length = 5 + digits(file_count) + 1 + strlen(all_filenames) + sizeof(all_files) + 1;
     char *encoded = malloc(encoded_length);
     memset(encoded, '\0', encoded_length);
 

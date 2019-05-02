@@ -223,6 +223,7 @@ void handleArguments(char *arguments, int fd)
     switch (argument)
     {
         case 1: // checkout
+        	checkout(tokens[1], fd);
             break;
         case 2: // update
             break;

@@ -1,19 +1,20 @@
 #ifndef _WTFCOMMANDS_h
 #define _WTFCOMMANDS_h
 
-#include <fcntl.h>    // open()
-#include <errno.h>    // errno
-#include <stdio.h>    // stderr
-#include <stdlib.h>   // free()
-#include <string.h>   // memset, strlen()
-#include <unistd.h>   // close(), write()
-#include <sys/stat.h> // mkdir()
-#include <openssl/sha.h> // Hashing
-#include <unistd.h>        // For close()
-#include <errno.h>         // errno
-#include <dirent.h>        // dirent
-#include "SocketLibrary.h" // socket functions
-#include <ftw.h> // Removing directories
+#include <fcntl.h>    		// open()
+#include <errno.h>    		// errno
+#include <stdio.h>    		// stderr
+#include <stdlib.h>   		// free()
+#include <string.h>   		// memset, strlen()
+#include <unistd.h>   		// close(), write()
+#include <sys/stat.h> 		// mkdir()
+#include <openssl/sha.h> 	// Hashing
+#include <unistd.h>         // For close()
+#include <errno.h>          // errno
+#include <dirent.h>         // dirent
+#include "SocketLibrary.h"  // socket functions
+#include <ftw.h> 			// Removing directories
+#include "zlib.h" 			// File compression
 
 #define RESET "\033[0m"
 #define RED "\033[0;31m"
@@ -59,5 +60,6 @@ void removeMutex(char *); 		// Removes a file mutex
 void removeFiles(char *);		// Removes files in a directory
 void create(char *, int); 		// Creates repository for both server and client
 void destroy(char *, int);		// Destroys a repository on the server
+void checkout(char *, int);		// Distributes a copy of a project to the client from the server
 
 #endif /* _WTFCOMMANDS_h */
