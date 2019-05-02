@@ -210,3 +210,6 @@ Status Update - Dennis Kager - 5/02/19 @ 12:02AM
 Status Update - Ali Awari - 5/1/19 @ 2:31AM
 ------------------------------------------------
 * Hard reset my repo, 
+* Formatting
+* Changed receiveFiles to return a LinkedList
+* Edited above change in Client.c

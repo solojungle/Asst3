@@ -19,12 +19,13 @@ int main(int argc, char *argv[])
  **/
 void handleArguments(int argc, char *argv[])
 {
-    char string[256];                       // could segfault. (Need to dynamically allocate if function is needed).
-    memset(string, '\0', (sizeof(string))); // need to memset, or else you get junk characters.
-    char *command = (char*)malloc(3*sizeof(char)); // Separate command for client handling
-    if(command == NULL){
-    	fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
-    	exit(EXIT_FAILURE);
+    char string[256];                                 // could segfault. (Need to dynamically allocate if function is needed).
+    memset(string, '\0', (sizeof(string)));           // need to memset, or else you get junk characters.
+    char *command = (char *)malloc(3 * sizeof(char)); // Separate command for client handling
+    if (command == NULL)
+    {
+        fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
+        exit(EXIT_FAILURE);
     }
 
     if (argc < 2) // check to make an argument was passed.
@@ -178,9 +179,9 @@ void handleArguments(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-	strcpy(command, string); // Copy command to handle it on client side
-	char *repo = argv[2];
-	
+    strcpy(command, string); // Copy command to handle it on client side
+    char *repo = argv[2];
+
     int i = 2;
     while (argv[i] != NULL)
     {
@@ -189,7 +190,7 @@ void handleArguments(int argc, char *argv[])
         strcat(string, argv[i]);
         i += 1;
     }
-    
+
     sendArgument(string, command, repo);
 
     return;
@@ -262,49 +263,52 @@ void sendArgument(char *argument, char *command, char *repo)
         return;
     }
     printf("%s\n", response_buff);
-    
-    if(strcmp(command, "1") == 0){ // Checkout
-    	receiveFiles(server.socket_fd, repo, 3);
+
+    if (strcmp(command, "1") == 0)
+    { // Checkout
+        outputFiles(receiveFiles(server.socket_fd), repo, 3);
     }
-    else if(strcmp(command, "2") == 0){ // Update
-    
+    else if (strcmp(command, "2") == 0)
+    { // Update
     }
-    else if(strcmp(command, "3") == 0){ // Upgrade
-    
+    else if (strcmp(command, "3") == 0)
+    { // Upgrade
     }
-    else if(strcmp(command, "4") == 0){ // Commit
-    
+    else if (strcmp(command, "4") == 0)
+    { // Commit
     }
-    else if(strcmp(command, "5") == 0){ // Push
-    
+    else if (strcmp(command, "5") == 0)
+    { // Push
     }
-    else if(strcmp(command, "6") == 0){ // Create
-    	recv(server.socket_fd, commandResponse, sizeof(commandResponse), 0);
-    	printf("%s%s%s", YELLOW, commandResponse, RESET);
-    	memset(response_buff, '\0', sizeof(response_buff));
-    	receiveFiles(server.socket_fd, repo, 1); // 1 indicates that the client is receiving
+    else if (strcmp(command, "6") == 0)
+    { // Create
+        recv(server.socket_fd, commandResponse, sizeof(commandResponse), 0);
+        printf("%s%s%s", YELLOW, commandResponse, RESET);
+        memset(response_buff, '\0', sizeof(response_buff));
+        outputFiles(receiveFiles(server.socket_fd), repo, 1); // 1 indicates that the client is receiving
     }
-    else if(strcmp(command, "7") == 0){ // Destroy
-    	recv(server.socket_fd, commandResponse, sizeof(commandResponse), 0);
-    	printf("%s%s%s", YELLOW, commandResponse, RESET);
+    else if (strcmp(command, "7") == 0)
+    { // Destroy
+        recv(server.socket_fd, commandResponse, sizeof(commandResponse), 0);
+        printf("%s%s%s", YELLOW, commandResponse, RESET);
     }
-    else if(strcmp(command, "8") == 0){ // Add
-    
+    else if (strcmp(command, "8") == 0)
+    { // Add
     }
-    else if(strcmp(command, "9") == 0){ // Remove
-    
+    else if (strcmp(command, "9") == 0)
+    { // Remove
     }
-    else if(strcmp(command, "10") == 0){ // Current Version
-    
+    else if (strcmp(command, "10") == 0)
+    { // Current Version
     }
-    else if(strcmp(command, "11") == 0){ // History
-    
+    else if (strcmp(command, "11") == 0)
+    { // History
     }
-    else if(strcmp(command, "12") == 0){ // Rollback
-    
+    else if (strcmp(command, "12") == 0)
+    { // Rollback
     }
     else
-    	fprintf(stderr,"Command not found!\n");
+        fprintf(stderr, "Command not found!\n");
 
     close(server.socket_fd);
 

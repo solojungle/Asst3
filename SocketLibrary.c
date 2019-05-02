@@ -234,7 +234,7 @@ struct files_type *createFileList(char **files, int n)
             filename_length = strlen(filename);      // get length of filename.
 
             file_length = lseek(fd, 0, SEEK_END); // find files length with lseek().
-           
+
             if (file_length == -1)
             {
                 fprintf(stderr, "%sError%s: Lseek failed to find end of file.\n", RED, RESET);
@@ -273,8 +273,9 @@ struct files_type *createFileList(char **files, int n)
  *  @returns: void.
  *  @comments: receives encoded string, decodes it, then creates files.
  */
-void receiveFiles(int fd, char *repo, int mode)
+struct files_type *receiveFiles(int fd)
 {
+    struct files_type *files;
     char command_buffer[6];          // get first word in string e.i "send".
     memset(command_buffer, '\0', 6); // remove junk.
 
@@ -282,111 +283,116 @@ void receiveFiles(int fd, char *repo, int mode)
 
     if (recv(fd, command_buffer, sizeof(command_buffer) - 1, 0) == -1) // read first word
     {
-       // send(fd, "ERR.", 4, 0); // reply to sender saying we received command.
+        // send(fd, "ERR.", 4, 0); // reply to sender saying we received command.
         printf("%sERR.%s\n", RED, RESET); // Error
         fprintf(stderr, "%sError%s: There was an error receiving message from socket.\n", RED, RESET);
-        return;
+        return NULL;
     }
 
-    //send(fd, "OK.", 3, 0); // reply to sender saying we received command. // Wouldn't actually send message to client.
+    send(fd, "OK.", 3, 0); // reply to sender saying we received command.
 
     if (strlen(command_buffer) == 0) // when thread/socket closes it sends an empty string
     {
         //fprintf(stderr, "%sError%s: Returned string was empty, an error occured on server.\n", RED, RESET);
         printf("%sERR.%s\n", RED, RESET); // Error
         fprintf(stderr, "%sError%s: No files received.\n", RED, RESET);
-        return;
+        return NULL;
     }
     else if (strcmp(command_buffer, "send:") == 0) // check to make sure correct string was given.
     {
-    	printf("%sOK.%s\n", GREEN, RESET); // Encoded file recieved
-        struct files_type *files = decodeString(fd); // decode string.
-        outputFiles(files, repo, mode);
+        printf("%sOK.%s\n", GREEN, RESET); // Encoded file recieved
+        files = decodeString(fd);          // decode string.
     }
     else
     {
-    	printf("%sERR.%s\n", RED, RESET); // Error
+        printf("%sERR.%s\n", RED, RESET); // Error
         fprintf(stderr, "%sError%s: Encoded string was sent incorrectly.\n", RED, RESET);
-        return;
+        return NULL;
     }
 
-    return;
+    return files;
 }
 
-void outputFiles(struct files_type *files, char *repo, int mode){
-	struct files_type *cursor = files;
-	char path[200];
-	int wd;
-	
-	if(mode == 1){ // Outputting files relative to client
-		while(cursor != NULL){
-			memset(path, '\0', sizeof(path));
-			strcpy(path, "./Projects/");
-			strcat(path, repo);
-			strcat(path, "/");
-			strcat(path, cursor -> filename);
-		
-			wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
-			if(wd != -1){
-				write(wd, cursor -> file, cursor -> file_length);
-				printf("%s file %sadded%s to %s\n", cursor -> filename, GREEN, RESET, path);
-			}
-			else
-				fprintf(stderr, "Error: Could not create file!\n");
-		
-		
-			close(wd);
-			cursor = cursor -> next;
-		}	
-	}
-	
-	if(mode == 2){ // Outputting files relative to server
-		while(cursor != NULL){
-			memset(path, '\0', sizeof(path));
-			strcpy(path, "./.server_repos/");
-			strcat(path, repo);
-			strcat(path, "/");
-			strcat(path, cursor -> filename);
-		
-			wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
-			if(wd != -1){
-				write(wd, cursor -> file, cursor -> file_length);
-				printf("%s file %sadded%s to %s\n", cursor -> filename, GREEN, RESET, path);
-			}
-			else
-				fprintf(stderr, "Error: Could not create file!\n");
-		
-		
-			close(wd);
-			cursor = cursor -> next;
-		}	
-	}
-	
-	if(mode == 3){ // Un-tar files relative to client
-		while(cursor != NULL){
-			memset(path, '\0', sizeof(path));
-			strcpy(path, "./Projects/");
-			strcat(path, cursor -> filename);
-		
-			wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
-			if(wd != -1){
-				write(wd, cursor -> file, cursor -> file_length);
-				printf("%s file %sadded%s to %s\n", cursor -> filename, GREEN, RESET, path);
-				printf("%sDeompressing%s %s...\n", YELLOW, RESET, cursor -> filename);
-				
-			}
-			else
-				fprintf(stderr, "Error: Could not create file!\n");
-		
-		
-			close(wd);
-			cursor = cursor -> next;
-		}
-	}
-	
-	if(mode == 4){ // Un-tar files relative to server
-		
-	}
+void outputFiles(struct files_type *files, char *repo, int mode)
+{
+    struct files_type *cursor = files;
+    char path[200];
+    int wd;
+
+    if (mode == 1)
+    { // Outputting files relative to client
+        while (cursor != NULL)
+        {
+            memset(path, '\0', sizeof(path));
+            strcpy(path, "./Projects/");
+            strcat(path, repo);
+            strcat(path, "/");
+            strcat(path, cursor->filename);
+
+            wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+            if (wd != -1)
+            {
+                write(wd, cursor->file, cursor->file_length);
+                printf("%s file %sadded%s to %s\n", cursor->filename, GREEN, RESET, path);
+            }
+            else
+                fprintf(stderr, "Error: Could not create file!\n");
+
+            close(wd);
+            cursor = cursor->next;
+        }
+    }
+
+    if (mode == 2)
+    { // Outputting files relative to server
+        while (cursor != NULL)
+        {
+            memset(path, '\0', sizeof(path));
+            strcpy(path, "./.server_repos/");
+            strcat(path, repo);
+            strcat(path, "/");
+            strcat(path, cursor->filename);
+
+            wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+            if (wd != -1)
+            {
+                write(wd, cursor->file, cursor->file_length);
+                printf("%s file %sadded%s to %s\n", cursor->filename, GREEN, RESET, path);
+            }
+            else
+                fprintf(stderr, "Error: Could not create file!\n");
+
+            close(wd);
+            cursor = cursor->next;
+        }
+    }
+
+    if (mode == 3)
+    { // Un-tar files relative to client
+        while (cursor != NULL)
+        {
+            memset(path, '\0', sizeof(path));
+            strcpy(path, "./Projects/");
+            strcat(path, cursor->filename);
+
+            wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
+            if (wd != -1)
+            {
+                write(wd, cursor->file, cursor->file_length);
+                printf("%s file %sadded%s to %s\n", cursor->filename, GREEN, RESET, path);
+                printf("%sDeompressing%s %s...\n", YELLOW, RESET, cursor->filename);
+            }
+            else
+                fprintf(stderr, "Error: Could not create file!\n");
+
+            close(wd);
+            cursor = cursor->next;
+        }
+    }
+
+    if (mode == 4)
+    { // Un-tar files relative to server
+    }
 }
 
 /*
@@ -446,7 +452,7 @@ struct files_type *decodeString(int fd)
 
         cursor->file = realloc(cursor->file, cursor->file_length); // realloc to file content size.
         memset(cursor->file, '\0', cursor->file_length);           // remove previous contents.
-        strcpy(cursor->file, temp);                                    // place correct content.
+        strcpy(cursor->file, temp);                                // place correct content.
 
         cursor = cursor->next;
     }
