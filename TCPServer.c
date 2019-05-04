@@ -226,6 +226,7 @@ void handleArguments(char *arguments, int fd)
         checkout(tokens[1], fd);
         break;
     case 2: // update
+        sendManifest(tokens[1], fd);
         break;
     case 3: // upgrade
         break;
@@ -244,7 +245,7 @@ void handleArguments(char *arguments, int fd)
     case 9: // remove
         break;
     case 10: // currentversion
-        currentversion(tokens[1], fd);
+        sendManifest(tokens[1], fd);
         break;
     case 11: // history
         break;

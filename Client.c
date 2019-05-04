@@ -268,8 +268,9 @@ void sendArgument(char *argument, char *command, char *repo)
     { // Checkout
         outputFiles(receiveFiles(server.socket_fd), repo, 3);
     }
-    else if (strcmp(command, "2") == 0)
-    { // Update
+    else if (strcmp(command, "2") == 0) // Update
+    {
+        update(argument, command, repo, server.socket_fd);
     }
     else if (strcmp(command, "3") == 0)
     { // Upgrade
@@ -301,7 +302,24 @@ void sendArgument(char *argument, char *command, char *repo)
     else if (strcmp(command, "10") == 0)
     { // Current Version
         struct files_type *manifest = receiveFiles(server.socket_fd);
-        printf("%sCurrent version: %s%s\n", YELLOW, strtok(manifest->file, "\n"), RESET);
+        if (manifest == NULL)
+        {
+            fprintf(stderr, "%sError%s: Unable to grab the current version.\n", RED, RESET);
+        }
+        else
+        {
+            char *end;
+            char *token = strtok(manifest->file, "\n");
+            long version = strtol(token, &end, 10);
+
+            if (end == token)
+            {
+                fprintf(stderr, "%sError%s: No digits were found\n", RED, RESET);
+                return;
+            }
+
+            printf("%sCurrent version: %d%s\n", YELLOW, version, RESET);
+        }
     }
     else if (strcmp(command, "11") == 0)
     { // History
@@ -319,4 +337,154 @@ void sendArgument(char *argument, char *command, char *repo)
     free(serverInfo->IP); // free IP malloc.
     free(serverInfo);     // free struct afterwards.
     return;
+}
+
+void update(char *argument, char *command, char *repo, int fd)
+{
+    int length = 9 + strlen(repo) + 11; // Projects/ + <project_name> + /.manifest\0
+    char project_path[length];
+    memset(project_path, '\0', length);
+
+    strcpy(project_path, "Projects/");
+    strcat(project_path, repo);
+    strcat(project_path, "/.manifest");
+
+    struct project_manifest *client_manifest = fetchManifest(project_path);
+    struct files_type *server_file = receiveFiles(fd);
+    struct project_manifest *server_manifest;
+
+    if (server_file == NULL || client_manifest == NULL)
+    {
+        fprintf(stderr, "%sError%s: Unable to grab the current version of .manifest.\n", RED, RESET);
+        return;
+    }
+    else
+    {
+        if (mkdir(".temp", S_IRWXU | S_IRWXG) == -1)
+        {
+            fprintf(stderr, "%sError%s: Directory failed to be created.\n", RED, RESET);
+            return;
+        }
+
+        int temp_length = 6 + strlen(server_file->filename) + 1;
+        char temp_manifest_path[temp_length];
+        memset(temp_manifest_path, '\0', temp_length);
+
+        strcpy(temp_manifest_path, ".temp/"); // 6
+        strcat(temp_manifest_path, server_file->filename);
+
+        int wd = open(temp_manifest_path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+        if (wd == -1)
+        {
+            fprintf(stderr, "%sError%s: Could not open file.\n", RED, RESET);
+            rmdir(".temp");
+            return;
+        }
+
+        if (write(wd, server_file->file, server_file->file_length) == -1)
+        {
+            fprintf(stderr, "%sError%s: Could not write file.\n", RED, RESET);
+            remove(temp_manifest_path);
+            rmdir(".temp");
+            return;
+        }
+        close(wd);
+
+        server_manifest = fetchManifest(temp_manifest_path);
+
+        if (server_manifest == NULL)
+        {
+            fprintf(stderr, "%sError%s: server_manifest is NULL\n", RED, RESET);
+            remove(temp_manifest_path);
+            rmdir(".temp");
+            return;
+        }
+
+        if (remove(temp_manifest_path) != 0)
+        {
+            fprintf(stderr, "%sError%s: temp_manifest_path failed to be removed.\n", RED, RESET);
+            return;
+        }
+
+        if (rmdir(".temp") == -1)
+        {
+            fprintf(stderr, "%sError%s: Directory failed to be deleted.\n", RED, RESET);
+            return;
+        }
+
+        if (strcmp(server_manifest->repoVersion, client_manifest->repoVersion) == 0) // same version
+        {
+            int numberOfFiles = 0;
+            struct project_manifest *cursor = client_manifest;
+            while (cursor != NULL)
+            {
+                numberOfFiles += 1;
+                cursor = cursor->nextNode;
+            }
+
+            char *files_to_update[numberOfFiles];
+            struct project_manifest *inner_cursor = client_manifest;
+            cursor = client_manifest;
+            int index = 0;
+            while (cursor != NULL) // checks to see if client file exists on server.
+            {
+                int existsInServer = 0;
+                int hashIsDifferent = 0;
+                while (inner_cursor != NULL)
+                {
+                    if (strcmp(inner_cursor->file, cursor->file) == 0)
+                    {
+                        existsInServer = 1;
+
+                        if (strcmp(inner_cursor->hash, cursor->hash) != 0)
+                        {
+                            hashIsDifferent = 1;
+                        }
+                    }
+
+                    inner_cursor = inner_cursor->nextNode;
+                }
+
+                if (!existsInServer)
+                {
+                    files_to_update[index] = cursor->file;
+                }
+
+                if (hashIsDifferent)
+                {
+                }
+
+                index += 1;
+                cursor = cursor->nextNode;
+            }
+
+            // Case 1 (upload) :
+            //      File in client .manifest
+            //      File not in server .manifest
+            //      .manifests are same version
+
+            //      File in client .manifest
+            //      File in server .manifest
+            //      File hashes are different
+            //      .manifests are same version
+        }
+        else // different version
+        {
+            // Case 2 (modify):
+            // 	File in client .manifest
+            // 	File in server .manifest
+            // 	.manifests are different versions
+            // 	Files hash in client is same in client .manifest
+
+            // Case 3 (added):
+            // 	File not in client .manifest
+            // 	File in server .manifest
+            // 	.manifests are different versions
+
+            // Case 4 (deleted):
+            // 	File in client .manifest
+            // 	File not in server .manifest
+            // 	.manifests are different versions
+        }
+    }
 }

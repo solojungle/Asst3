@@ -1039,7 +1039,7 @@ void checkout(char *repo, int fd)
     }
 }
 
-void currentversion(char *repo, int fd)
+void sendManifest(char *repo, int fd)
 {
     int length = 14 + strlen(repo) + 11; // .server_repos/ + <project_name> + /.manifest\0
     char project_path[length];
@@ -1048,6 +1048,12 @@ void currentversion(char *repo, int fd)
     strcpy(project_path, ".server_repos/");
     strcat(project_path, repo);
     strcat(project_path, "/.manifest");
+
+    if (fetchManifest(project_path) == NULL)
+    {
+        send(fd, "Error.\n", 7, 0);
+        return;
+    }
 
     char *files[1];
     files[0] = project_path;
