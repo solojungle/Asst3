@@ -219,6 +219,11 @@ Status Update - Ali Awari - 5/2/19 @ 2:31AM
 * Implemented currentversion.
 * Fixed a bug in sendFiles where I didn't allocated a NULL term, for file contents.
 
+Status Update - Dennis Kager - 5/04/19 @ 4:56AM
+------------------------------------------------
+* Finished checkout()
+* Created three new functions in SocketLibrary.c for sending/receiving specifically tar.gz files
+
 Status Update - Ali Awari - 5/4/19 @ 3:25PM
 ------------------------------------------------
 * Fixed sendManifest()

@@ -966,76 +966,98 @@ void destroy(char *repo, int fd)
     removeMutex("./.server_repos"); // Remove mutex
 }
 
-void checkout(char *repo, int fd)
-{
+void checkout(char *repo, int fd){
     DIR *sr = opendir("./.server_repos"); // Open directory for server projects
-    DIR *rch;                             // Server repo-to-be-checked-out
+    DIR *rch; // Server repo-to-be-checked-out
     char *checkoutNotSuccessful = "Error: Project does not exist!\n";
     char zipPath[300];
     memset(zipPath, '\0', sizeof(zipPath)); // memset the path to the tar.gz file
-    char cmd[300];                          // Holds the system command to tar the directory
-    memset(cmd, '\0', sizeof(cmd));         // memset the command
-    char **files;                           // Will hold the file path for the server project tar.gz to send to client
-
-    char *serverPath = (char *)malloc((strlen(repo) + 17) * sizeof(char)); // Create path on server side for new repo
-    if (serverPath == NULL)
-    {
+    char cmd[300]; // Holds the system command to tar the directory
+    memset(cmd, '\0', sizeof(cmd)); // memset the command
+    char buffer;
+    
+    char *serverPath = (char*)malloc((strlen(repo) + 17) * sizeof(char)); // Create path on server side for new repo
+    if(serverPath == NULL){
         fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
+        send(fd, "Error: Malloc failed to allocate memory!\n", 41, 0);
         return;
     }
-
+    
     strcpy(serverPath, "./.server_repos/"); // Setup path for server
     strcat(serverPath, repo);
     strcat(serverPath, "\0");
-
-    if (sr == NULL)
-    { // Check to see if the directory .server_repos exists
+    
+    if(sr == NULL){ // Check to see if the directory .server_repos exists
         fprintf(stderr, "Error: Server has no projects!\n");
+        send(fd, "Error: Server has no projects!\n", 31, 0);
     }
     else
         closedir(sr);
-
+    
     rch = opendir(serverPath); // Open the directory-to-be-checked-out to see if it exists
-
+    
     if (rch == NULL) // If the directory does not exist
     {
         fprintf(stderr, "%sError%s: %s project does not exist.\n", RED, RESET, repo);
         send(fd, checkoutNotSuccessful, strlen(checkoutNotSuccessful), 0);
-
+        
         return;
     }
     else // If the directory exists
     {
         closedir(rch); // Close the directory-to-be-checked-out
-        printf("Checkpoint 1\n");
         strcpy(cmd, "cd ./.server_repos && tar -czvf "); // Setup the command string to zip the directory
         strcat(cmd, repo);
         strcat(cmd, ".tar.gz ");
         strcat(cmd, repo);
         printf("CMD: %s\n", cmd);
-        printf("Checkpoint 2\n");
-
-        system(cmd); // CD to directory and Zip project (which eliminates extra file structure)
-        printf("Checkpoint 3\n");
-
+        
+        system(cmd); // CD to directory and Zip project (which eliminates extra file structures)
+        
         strcpy(zipPath, "./.server_repos/");
         strcat(zipPath, repo);
         strcat(zipPath, ".tar.gz");
-
-        files = malloc((strlen(serverPath) + 11) * sizeof(char));
-        if (files == NULL)
-        {
-            fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
-            return;
+        
+        struct files_type *tarFile = malloc(sizeof(struct files_type *));
+        
+        int rd = open(zipPath, O_RDONLY);
+        if(rd != -1){
+            send(fd, "OK.\n", 3, 0);
+            tarFile -> file_length = lseek(rd, 0, SEEK_END); // find files length with lseek().
+            if (tarFile -> file_length == -1)
+            {
+                fprintf(stderr, "%sError%s: Lseek failed to find end of file.\n", RED, RESET);
+                close(rd); // close file.
+                return;
+            }
+            lseek(rd, 0, SEEK_SET); // reset file offset.
+            
+            tarFile -> filename = (char*)malloc((strlen(repo) + 8) * sizeof(char));
+            strcpy(tarFile -> filename, repo);
+            strcat(tarFile -> filename, ".tar.gz");
+            strcat(tarFile -> filename, "\0");
+            
+            tarFile -> filename_length = strlen(tarFile -> filename);
+            
+            char fileContents[tarFile -> file_length];
+            int i = 0;
+            for(i = 0; i < (tarFile -> file_length); ++i){
+                read(rd, &buffer, 1);
+                fileContents[i] = buffer;
+            }
+            
+            tarFile -> file = fileContents;
+            tarFile -> next = NULL;
+            
+            sendTar(tarFile, fd);
+            remove(zipPath);
         }
-        files[0] = malloc(strlen(zipPath) * sizeof(char)); // Setup the path to the server manifest to send send to client
-        strcpy(files[0], zipPath);
-
-        printf("Checkpoint 4\n");
-
-        sendFiles(createFileList(files, 1), fd); // SENDING MANIFEST FILE FROM SERVER TO CLIENT THROUGH THE CLIENT'S FD
-
-        // remove(zipPath);
+        else{
+            fprintf(stderr,"Error: Could not open file!\n");
+            send(fd, "Error: Could not open file!\n", 28, 0);
+        }
+        
+        close(rd);
     }
 }
 

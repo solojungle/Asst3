@@ -41,6 +41,23 @@ void handleArguments(int argc, char *argv[])
             fprintf(stderr, "Usage: %s checkout <project name>\n", argv[0]);
             exit(EXIT_FAILURE);
         }
+        
+        char path[200];
+        memset(path, '\0', 200);
+        strcpy(path, "./Projects/");
+        strcat(path, argv[2]);
+        strcat(path, "\0");
+        
+        printf("Path: %s\n", path);
+        DIR *fd = opendir(path);
+        
+        if(fd != NULL){
+            fprintf(stderr, "%sError:%s The project already exists in the Projects/ folder\n", RED, RESET);
+            closedir(fd);
+            exit(EXIT_FAILURE);
+        }
+        
+        closedir(fd);
 
         strcpy(string, "1"); // Convert name to number (easier on server end).
     }
@@ -266,7 +283,12 @@ void sendArgument(char *argument, char *command, char *repo)
 
     if (strcmp(command, "1") == 0)
     { // Checkout
-        outputFiles(receiveFiles(server.socket_fd), repo, 3);
+        recv(server.socket_fd, commandResponse, 41, 0);
+        
+        if(commandResponse[0] == 'O')
+            receiveTar(server.socket_fd, repo, 3);
+        else if(commandResponse[0] == 'E')
+            printf("%s", commandResponse);
     }
     else if (strcmp(command, "2") == 0) // Update
     {
