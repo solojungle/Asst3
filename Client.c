@@ -320,7 +320,7 @@ void sendArgument(char *argument, char *command, char *repo, char *argv[])
     }
     else if (strcmp(command, "8") == 0)
     { // Add
-    	add(argv[2], argv[3]);
+        add(argv[2], argv[3]);
     }
     else if (strcmp(command, "9") == 0)
     { // Remove
@@ -368,20 +368,16 @@ void sendArgument(char *argument, char *command, char *repo, char *argv[])
 void update(char *argument, char *command, char *repo, int fd)
 {
     int length = 9 + strlen(repo) + 11; // Projects/ + <project_name> + /.manifest\0
-    char project_path[length];
-    memset(project_path, '\0', length);
+    char client_manifest_path[length];
+    memset(client_manifest_path, '\0', length);
 
-    strcpy(project_path, "Projects/");
-    strcat(project_path, repo);
-    strcat(project_path, "/.manifest");
+    strcpy(client_manifest_path, "Projects/");
+    strcat(client_manifest_path, repo);
+    strcat(client_manifest_path, "/.manifest");
 
-    manageManifest(repo, 1);
-
-    struct project_manifest *client_manifest = fetchManifest(project_path);
+    struct project_manifest *client_manifest = fetchManifest(client_manifest_path);
     struct files_type *server_file = receiveFiles(fd);
     struct project_manifest *server_manifest;
-
-    // printf("file: %s\n", client_manifest->fileVersion);
 
     if (server_file == NULL || client_manifest == NULL)
     {
@@ -390,6 +386,14 @@ void update(char *argument, char *command, char *repo, int fd)
     }
     else
     {
+        DIR *dir = opendir(".temp"); // in case somehow the folder was left over.
+        if (dir)                     // check to see if folder was left over.
+        {
+            closedir(dir);
+            remove(".temp/.manifest");
+            rmdir(".temp");
+        }
+
         if (mkdir(".temp", S_IRWXU | S_IRWXG) == -1)
         {
             fprintf(stderr, "%sError%s: Directory failed to be created.\n", RED, RESET);
@@ -420,7 +424,7 @@ void update(char *argument, char *command, char *repo, int fd)
         }
         close(wd);
 
-        if ((server_manifest = fetchManifest(temp_manifest_path)) == NULL) // fetch.
+        if ((server_manifest = fetchManifest(".temp/.manifest")) == NULL) // fetch.
         {
             fprintf(stderr, "%sError%s: server_manifest is NULL\n", RED, RESET);
             remove(temp_manifest_path);
@@ -443,7 +447,7 @@ void update(char *argument, char *command, char *repo, int fd)
         // ====================================================================================================
 
         struct project_manifest *client_cursor = client_manifest;
-        int numberOfFilesInClient = 0;
+        int numberOfFilesInClient = -1;
 
         while (client_cursor != NULL)
         {
@@ -451,9 +455,7 @@ void update(char *argument, char *command, char *repo, int fd)
             client_cursor = client_cursor->nextNode;
         }
 
-        client_cursor = client_manifest;
-
-        if (numberOfFilesInClient == 1 && client_cursor->hash == NULL)
+        if (numberOfFilesInClient == 0)
         {
             fprintf(stderr, "%sWarning%s: Client .manifest is empty.\n", RED, RESET);
             return;
@@ -462,34 +464,30 @@ void update(char *argument, char *command, char *repo, int fd)
         // ====================================================================================================
 
         struct project_manifest *server_cursor = server_manifest;
-        int numberOfFilesInServer = 0;
+        int numberOfFilesInServer = -1;
 
-        while (server_manifest != NULL)
+        while (server_cursor != NULL)
         {
             numberOfFilesInServer += 1;
-            server_manifest = server_manifest->nextNode;
-        }
-
-        server_manifest = client_manifest;
-
-        if (numberOfFilesInServer == 1 && server_manifest->hash == NULL)
-        {
-            fprintf(stderr, "%sWarning%s: Server .manifest is empty.\n", RED, RESET);
-            return;
+            server_cursor = server_cursor->nextNode;
         }
 
         // ====================================================================================================
 
-        struct project_manifest *cursor = client_manifest;
-        struct project_manifest *inner_cursor = server_manifest;
+        struct project_manifest *cursor = client_manifest->nextNode;
+        struct project_manifest *inner_cursor = server_manifest->nextNode;
 
         int index = 0;
         int existsIn;
         int differentHash;
 
-        struct project_manifest *notInServerManifest[numberOfFilesInClient + 1];                 // sizeof client manifest
-        struct project_manifest *notInClientManifest[numberOfFilesInServer + 1];                 // sizeof server manifest
-        struct project_manifest *hashIsDifferent[numberOfFilesInClient + numberOfFilesInServer]; // more efficient to do max(a, b), but this will never fail either.
+        int numberOfNIS = 0; // not in server.
+        int numberOfNIC = 0; // not in client.
+        int numberOfHID = 0; // hash is different.
+
+        struct project_manifest *notInServerManifest[numberOfFilesInClient + 1];                     // sizeof client manifest
+        struct project_manifest *notInClientManifest[numberOfFilesInServer + 1];                     // sizeof server manifest
+        struct project_manifest *hashIsDifferent[numberOfFilesInClient + numberOfFilesInServer + 1]; // more efficient to do max(a, b), but this will never fail either.
 
         memset(notInServerManifest, '\0', numberOfFilesInClient + 1);
         memset(notInClientManifest, '\0', numberOfFilesInServer + 1);
@@ -517,11 +515,13 @@ void update(char *argument, char *command, char *repo, int fd)
 
             if (!existsIn)
             {
+                numberOfNIS += 1;
                 notInServerManifest[index] = cursor;
             }
 
             if (differentHash)
             {
+                numberOfHID += 1;
                 hashIsDifferent[index] = cursor;
             }
 
@@ -532,8 +532,8 @@ void update(char *argument, char *command, char *repo, int fd)
 
         // ====================================================================================================
 
-        cursor = server_manifest;
-        inner_cursor = client_manifest;
+        cursor = server_manifest->nextNode;
+        inner_cursor = client_manifest->nextNode;
 
         index = 0;
         while (cursor != NULL)
@@ -553,6 +553,7 @@ void update(char *argument, char *command, char *repo, int fd)
 
             if (!existsIn)
             {
+                numberOfNIC += 1;
                 notInClientManifest[index] = cursor;
             }
 
@@ -566,20 +567,20 @@ void update(char *argument, char *command, char *repo, int fd)
         if (strcmp(server_manifest->repoVersion, client_manifest->repoVersion) == 0) // same version
         {
             /* File not in server .manifest */
-            if (notInServerManifest[0] != NULL)
+            if (numberOfNIS > 0)
             {
                 int i = 0;
-                while (notInServerManifest[i] != NULL)
+                while (numberOfNIS != i)
                 {
                     printf("U %s\n", notInServerManifest[i]->file);
                     i += 1;
                 }
             }
 
-            if (hashIsDifferent[0] != NULL)
+            if (numberOfHID > 0)
             {
                 int i = 0;
-                while (hashIsDifferent[i] != NULL)
+                while (numberOfHID != i)
                 {
                     printf("U %s\n", hashIsDifferent[i]->file);
                     i += 1;
@@ -603,20 +604,20 @@ void update(char *argument, char *command, char *repo, int fd)
             // 	.manifests are different versions
             // 	Files hash in client is same in client .manifest
 
-            if (notInClientManifest[0] != NULL) // Case 3 (added)
+            if (numberOfNIC > 0) // Case 3 (added)
             {
                 int i = 0;
-                while (notInClientManifest[i] != NULL)
+                while (numberOfNIC != i)
                 {
                     printf("A %s\n", notInClientManifest[i]->file);
                     i += 1;
                 }
             }
 
-            if (notInServerManifest[0] != NULL) // Case 4 (deleted)
+            if (numberOfNIS > 0) // Case 4 (deleted)
             {
                 int i = 0;
-                while (notInServerManifest[i] != NULL)
+                while (numberOfNIS != i)
                 {
                     printf("D %s\n", notInServerManifest[i]->file);
                 }

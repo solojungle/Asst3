@@ -238,3 +238,8 @@ Status Update - Dennis Kager - 5/04/19 @ 11:22PM
 * Fixed manageManifest()
 * Removed extraneous code I left in SocketLibrary.c
 * Added add() function. Note: I designed add() to only work when both a) the project repo exists and b) the file being added to the .manifest file is in the project repo
+
+Status Update - Ali Awari - 5/5/19 @ 3:42AM
+------------------------------------------------
+* Update() will print out the differences in files. (Upload case a. was only one currently tested).
+* TODO: write to .Update file
