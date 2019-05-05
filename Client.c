@@ -193,6 +193,7 @@ void handleArguments(int argc, char *argv[])
     else
     {
         fprintf(stderr, "Command not found\n");
+        manageManifest(argv[2], 1);
         exit(EXIT_FAILURE);
     }
 
@@ -208,7 +209,7 @@ void handleArguments(int argc, char *argv[])
         i += 1;
     }
 
-    sendArgument(string, command, repo);
+    sendArgument(string, command, repo, argv);
 
     return;
 }
@@ -220,7 +221,7 @@ void handleArguments(int argc, char *argv[])
  *  @comments: attempts a connection to server, sends argument to server,
  * tries every 3 seconds, on user to cancel.
  **/
-void sendArgument(char *argument, char *command, char *repo)
+void sendArgument(char *argument, char *command, char *repo, char *argv[])
 {
     struct server_info *serverInfo = getServerConfig(); // get IP + Port from config.
 
@@ -317,6 +318,7 @@ void sendArgument(char *argument, char *command, char *repo)
     }
     else if (strcmp(command, "8") == 0)
     { // Add
+    	add(argv[2], argv[3]);
     }
     else if (strcmp(command, "9") == 0)
     { // Remove

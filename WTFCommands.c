@@ -177,11 +177,11 @@ void manageManifest(char *repo, int mode) // 0 is server, 1 is client
 
     if (mode == 0) // server manifest
     {
-        strcpy(manifest_path, "Projects/");
+        strcpy(manifest_path, "./.server_repos/");
     }
     else
     {
-        strcpy(manifest_path, ".server_repos/");
+        strcpy(manifest_path, "./Projects/");
     }
 
     strcat(manifest_path, repo);
@@ -190,6 +190,9 @@ void manageManifest(char *repo, int mode) // 0 is server, 1 is client
     strcat(dirPath, "\0");
     strcat(manifest_path, ".manifest");
     strcat(manifest_path, "\0");
+    
+    printf("dirPath: %s\n", dirPath);
+    printf("manifest_path: %s\n", manifest_path);
 
     int fd = open(manifest_path, O_RDONLY);
 
@@ -884,7 +887,7 @@ void create(char *repo, int fd)
     else
     {
         printf("%s folder has been created on server.\n", repo);
-        manageManifest(serverPath, 0); // Creates the default manifest for the new server repo
+        manageManifest(repo, 0); // Creates the default manifest for the new server repo
         serverOK = 1;
     }
 
@@ -1099,3 +1102,48 @@ void sendManifest(char *repo, int fd)
 
     return;
 }
+
+void add(char *repo, char *file){
+	char *repoPath = (char*)malloc((strlen(repo) + 12) * sizeof(char));
+	char *filePath = (char*)malloc((strlen(repo) + strlen(file) + 13) * sizeof(char));
+	
+	if(repoPath == NULL || filePath == NULL){
+		fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	strcpy(repoPath, "./Projects/"); // Setup path to repository
+	strcat(repoPath, repo);
+	strcat(repoPath, "\0");
+	strcpy(filePath, repoPath); // Setup path to file
+	strcat(filePath, "/");
+	strcat(filePath, file);
+	strcat(filePath, "\0");
+	
+	DIR *rd = opendir(repoPath);
+
+	if(rd == NULL){ // Check to see if the repo exists
+		fprintf(stderr, "%sError:%s Projects/ folder not found!\n", RED, RESET);
+		exit(EXIT_FAILURE);
+	}
+	closedir(rd);
+	
+	int fd = open(filePath, O_RDONLY);
+	if(fd == -1){ // Check to see if the file exists
+		fprintf(stderr, "%sError:%s %s file does not exist!\n", RED, RESET, file);
+		printf("%sPlease add %s to the Projects/ folder before adding entry to .manifest%s\n", YELLOW, file, RESET);
+		exit(EXIT_FAILURE);
+	}
+	close(fd);
+	
+	manageManifest(repo, 1); // Create manifest entry
+	printf("%s file %sadded%s as an entry to .manifest\n", file, GREEN, RESET);
+}
+
+
+
+
+
+
+
+

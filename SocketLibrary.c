@@ -366,33 +366,6 @@ void outputFiles(struct files_type *files, char *repo, int mode)
             cursor = cursor->next;
         }
     }
-
-    if (mode == 3)
-    { // Un-tar files relative to client
-        while (cursor != NULL)
-        {
-            memset(path, '\0', sizeof(path));
-            strcpy(path, "./Projects/");
-            strcat(path, cursor->filename);
-
-            wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
-            if (wd != -1)
-            {
-                write(wd, cursor->file, cursor->file_length);
-                printf("%s file %sadded%s to %s\n", cursor->filename, GREEN, RESET, path);
-                printf("%sDeompressing%s %s...\n", YELLOW, RESET, cursor->filename);
-            }
-            else
-                fprintf(stderr, "Error: Could not create file!\n");
-
-            close(wd);
-            cursor = cursor->next;
-        }
-    }
-
-    if (mode == 4)
-    { // Un-tar files relative to server
-    }
 }
 
 /*
@@ -810,7 +783,7 @@ void unTar(struct files_type *cursor, char *repo, int mode){
     if(wd != -1){
         write(wd, cursor -> file, cursor -> file_length);
         printf("%s file %sadded%s to %s\n", cursor -> filename, GREEN, RESET, path);
-        printf("%sDeompressing%s %s...\n", YELLOW, RESET, cursor -> filename);
+        printf("%sDecompressing%s %s...\n", YELLOW, RESET, cursor -> filename);
         system(cmd); // Decompress tar file
         printf("Decompression %ssuccessful%s!\n", GREEN, RESET);
         remove(path); // Remove the tar file
