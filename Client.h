@@ -17,5 +17,6 @@
 
 void sendArgument(char *, char *, char *);
 void handleArguments(int, char **);
+void update(char *, char *, char *, int);
 
 #endif /* _CLIENT_h */

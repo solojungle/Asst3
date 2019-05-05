@@ -1,5 +1,6 @@
 #include "WTFCommands.h" // core functions
 #include "Client.h"      // client functions
+// #include "SocketLibrary.h" // receiveTar
 
 int main(int argc, char *argv[])
 {
@@ -41,22 +42,23 @@ void handleArguments(int argc, char *argv[])
             fprintf(stderr, "Usage: %s checkout <project name>\n", argv[0]);
             exit(EXIT_FAILURE);
         }
-        
+
         char path[200];
         memset(path, '\0', 200);
         strcpy(path, "./Projects/");
         strcat(path, argv[2]);
         strcat(path, "\0");
-        
+
         printf("Path: %s\n", path);
         DIR *fd = opendir(path);
-        
-        if(fd != NULL){
+
+        if (fd != NULL)
+        {
             fprintf(stderr, "%sError:%s The project already exists in the Projects/ folder\n", RED, RESET);
             closedir(fd);
             exit(EXIT_FAILURE);
         }
-        
+
         closedir(fd);
 
         strcpy(string, "1"); // Convert name to number (easier on server end).
@@ -284,10 +286,10 @@ void sendArgument(char *argument, char *command, char *repo)
     if (strcmp(command, "1") == 0)
     { // Checkout
         recv(server.socket_fd, commandResponse, 41, 0);
-        
-        if(commandResponse[0] == 'O')
+
+        if (commandResponse[0] == 'O')
             receiveTar(server.socket_fd, repo, 3);
-        else if(commandResponse[0] == 'E')
+        else if (commandResponse[0] == 'E')
             printf("%s", commandResponse);
     }
     else if (strcmp(command, "2") == 0) // Update
@@ -371,9 +373,13 @@ void update(char *argument, char *command, char *repo, int fd)
     strcat(project_path, repo);
     strcat(project_path, "/.manifest");
 
+    manageManifest(repo, 1);
+
     struct project_manifest *client_manifest = fetchManifest(project_path);
     struct files_type *server_file = receiveFiles(fd);
     struct project_manifest *server_manifest;
+
+    // printf("file: %s\n", client_manifest->fileVersion);
 
     if (server_file == NULL || client_manifest == NULL)
     {
@@ -412,9 +418,7 @@ void update(char *argument, char *command, char *repo, int fd)
         }
         close(wd);
 
-        server_manifest = fetchManifest(temp_manifest_path);
-
-        if (server_manifest == NULL)
+        if ((server_manifest = fetchManifest(temp_manifest_path)) == NULL) // fetch.
         {
             fprintf(stderr, "%sError%s: server_manifest is NULL\n", RED, RESET);
             remove(temp_manifest_path);
@@ -422,91 +426,199 @@ void update(char *argument, char *command, char *repo, int fd)
             return;
         }
 
-        if (remove(temp_manifest_path) != 0)
+        if (remove(temp_manifest_path) != 0) // remove file.
         {
             fprintf(stderr, "%sError%s: temp_manifest_path failed to be removed.\n", RED, RESET);
             return;
         }
 
-        if (rmdir(".temp") == -1)
+        if (rmdir(".temp") == -1) // remove dir.
         {
             fprintf(stderr, "%sError%s: Directory failed to be deleted.\n", RED, RESET);
             return;
         }
 
+        // ====================================================================================================
+
+        struct project_manifest *client_cursor = client_manifest;
+        int numberOfFilesInClient = 0;
+
+        while (client_cursor != NULL)
+        {
+            numberOfFilesInClient += 1;
+            client_cursor = client_cursor->nextNode;
+        }
+
+        client_cursor = client_manifest;
+
+        if (numberOfFilesInClient == 1 && client_cursor->hash == NULL)
+        {
+            fprintf(stderr, "%sWarning%s: Client .manifest is empty.\n", RED, RESET);
+            return;
+        }
+
+        // ====================================================================================================
+
+        struct project_manifest *server_cursor = server_manifest;
+        int numberOfFilesInServer = 0;
+
+        while (server_manifest != NULL)
+        {
+            numberOfFilesInServer += 1;
+            server_manifest = server_manifest->nextNode;
+        }
+
+        server_manifest = client_manifest;
+
+        if (numberOfFilesInServer == 1 && server_manifest->hash == NULL)
+        {
+            fprintf(stderr, "%sWarning%s: Server .manifest is empty.\n", RED, RESET);
+            return;
+        }
+
+        // ====================================================================================================
+
+        struct project_manifest *cursor = client_manifest;
+        struct project_manifest *inner_cursor = server_manifest;
+
+        int index = 0;
+        int existsIn;
+        int differentHash;
+
+        struct project_manifest *notInServerManifest[numberOfFilesInClient + 1];                 // sizeof client manifest
+        struct project_manifest *notInClientManifest[numberOfFilesInServer + 1];                 // sizeof server manifest
+        struct project_manifest *hashIsDifferent[numberOfFilesInClient + numberOfFilesInServer]; // more efficient to do max(a, b), but this will never fail either.
+
+        memset(notInServerManifest, '\0', numberOfFilesInClient + 1);
+        memset(notInClientManifest, '\0', numberOfFilesInServer + 1);
+        memset(hashIsDifferent, '\0', numberOfFilesInClient + numberOfFilesInServer + 1);
+
+        while (cursor != NULL)
+        {
+            existsIn = 0;
+            differentHash = 0;
+
+            while (inner_cursor != NULL)
+            {
+                if (strcmp(inner_cursor->file, cursor->file) == 0) // same name
+                {
+                    existsIn = 1;
+                    if (strcmp(inner_cursor->hash, cursor->hash) != 0)
+                    {
+                        differentHash = 1;
+                    }
+                    break;
+                }
+
+                inner_cursor = inner_cursor->nextNode;
+            }
+
+            if (!existsIn)
+            {
+                notInServerManifest[index] = cursor;
+            }
+
+            if (differentHash)
+            {
+                hashIsDifferent[index] = cursor;
+            }
+
+            index += 1;
+            inner_cursor = server_manifest;
+            cursor = cursor->nextNode;
+        }
+
+        // ====================================================================================================
+
+        cursor = server_manifest;
+        inner_cursor = client_manifest;
+
+        index = 0;
+        while (cursor != NULL)
+        {
+            existsIn = 0;
+
+            while (inner_cursor != NULL)
+            {
+                if (strcmp(inner_cursor->file, cursor->file) == 0) // same name
+                {
+                    existsIn = 1;
+                    break;
+                }
+
+                inner_cursor = inner_cursor->nextNode;
+            }
+
+            if (!existsIn)
+            {
+                notInClientManifest[index] = cursor;
+            }
+
+            index += 1;
+            inner_cursor = client_manifest;
+            cursor = cursor->nextNode;
+        }
+
+        // ====================================================================================================
+
         if (strcmp(server_manifest->repoVersion, client_manifest->repoVersion) == 0) // same version
         {
-            int numberOfFiles = 0;
-            struct project_manifest *cursor = client_manifest;
-            while (cursor != NULL)
+            /* File not in server .manifest */
+            if (notInServerManifest[0] != NULL)
             {
-                numberOfFiles += 1;
-                cursor = cursor->nextNode;
+                int i = 0;
+                while (notInServerManifest[i] != NULL)
+                {
+                    printf("U %s\n", notInServerManifest[i]->file);
+                    i += 1;
+                }
             }
 
-            char *files_to_update[numberOfFiles];
-            struct project_manifest *inner_cursor = client_manifest;
-            cursor = client_manifest;
-            int index = 0;
-            while (cursor != NULL) // checks to see if client file exists on server.
+            if (hashIsDifferent[0] != NULL)
             {
-                int existsInServer = 0;
-                int hashIsDifferent = 0;
-                while (inner_cursor != NULL)
+                int i = 0;
+                while (hashIsDifferent[i] != NULL)
                 {
-                    if (strcmp(inner_cursor->file, cursor->file) == 0)
-                    {
-                        existsInServer = 1;
-
-                        if (strcmp(inner_cursor->hash, cursor->hash) != 0)
-                        {
-                            hashIsDifferent = 1;
-                        }
-                    }
-
-                    inner_cursor = inner_cursor->nextNode;
+                    printf("U %s\n", hashIsDifferent[i]->file);
+                    i += 1;
                 }
-
-                if (!existsInServer)
-                {
-                    files_to_update[index] = cursor->file;
-                }
-
-                if (hashIsDifferent)
-                {
-                }
-
-                index += 1;
-                cursor = cursor->nextNode;
             }
-
-            // Case 1 (upload) :
-            //      File in client .manifest
-            //      File not in server .manifest
-            //      .manifests are same version
-
-            //      File in client .manifest
-            //      File in server .manifest
-            //      File hashes are different
-            //      .manifests are same version
         }
         else // different version
         {
+            int path_length = 9 + strlen(repo) + 9;
+            char path[path_length];
+            memset(path, '\0', path_length);
+
+            strcpy(path, "Projects/");
+            strcat(path, repo);
+            strcat(path, "/.Update");
+
+            int wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
             // Case 2 (modify):
             // 	File in client .manifest
             // 	File in server .manifest
             // 	.manifests are different versions
             // 	Files hash in client is same in client .manifest
 
-            // Case 3 (added):
-            // 	File not in client .manifest
-            // 	File in server .manifest
-            // 	.manifests are different versions
+            if (notInClientManifest[0] != NULL) // Case 3 (added)
+            {
+                int i = 0;
+                while (notInClientManifest[i] != NULL)
+                {
+                    printf("A %s\n", notInClientManifest[i]->file);
+                    i += 1;
+                }
+            }
 
-            // Case 4 (deleted):
-            // 	File in client .manifest
-            // 	File not in server .manifest
-            // 	.manifests are different versions
+            if (notInServerManifest[0] != NULL) // Case 4 (deleted)
+            {
+                int i = 0;
+                while (notInServerManifest[i] != NULL)
+                {
+                    printf("D %s\n", notInServerManifest[i]->file);
+                }
+            }
         }
     }
 }
