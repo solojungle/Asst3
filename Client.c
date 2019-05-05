@@ -564,6 +564,16 @@ void update(char *argument, char *command, char *repo, int fd)
 
         // ====================================================================================================
 
+        int path_length = 9 + strlen(repo) + 9;
+        char path[path_length];
+        memset(path, '\0', path_length);
+
+        strcpy(path, "Projects/");
+        strcat(path, repo);
+        strcat(path, "/.Update");
+
+        wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU); // create .Update.
+
         if (strcmp(server_manifest->repoVersion, client_manifest->repoVersion) == 0) // same version
         {
             /* File not in server .manifest */
@@ -589,15 +599,6 @@ void update(char *argument, char *command, char *repo, int fd)
         }
         else // different version
         {
-            int path_length = 9 + strlen(repo) + 9;
-            char path[path_length];
-            memset(path, '\0', path_length);
-
-            strcpy(path, "Projects/");
-            strcat(path, repo);
-            strcat(path, "/.Update");
-
-            int wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
             // Case 2 (modify):
             // 	File in client .manifest
             // 	File in server .manifest
@@ -610,6 +611,13 @@ void update(char *argument, char *command, char *repo, int fd)
                 while (numberOfNIC != i)
                 {
                     printf("A %s\n", notInClientManifest[i]->file);
+                    write(wd, "A ", 2);
+                    write(wd, notInServerManifest[i]->fileVersion, strlen(notInServerManifest[i]->fileVersion));
+                    write(wd, " ", 1);
+                    write(wd, notInServerManifest[i]->file, strlen(notInServerManifest[i]->file));
+                    write(wd, " ", 1);
+                    write(wd, notInServerManifest[i]->hash, strlen(notInServerManifest[i]->hash));
+                    write(wd, "\n", 1);
                     i += 1;
                 }
             }
@@ -620,8 +628,18 @@ void update(char *argument, char *command, char *repo, int fd)
                 while (numberOfNIS != i)
                 {
                     printf("D %s\n", notInServerManifest[i]->file);
+                    write(wd, "D ", 2);
+                    write(wd, notInServerManifest[i]->fileVersion, strlen(notInServerManifest[i]->fileVersion));
+                    write(wd, " ", 1);
+                    write(wd, notInServerManifest[i]->file, strlen(notInServerManifest[i]->file));
+                    write(wd, " ", 1);
+                    write(wd, notInServerManifest[i]->hash, strlen(notInServerManifest[i]->hash));
+                    write(wd, "\n", 1);
+                    i += 1;
                 }
             }
+
+            write(wd, "\n", 1); // Ends the last line with a new line (leaves empty line at the end of the file which is helpful for tokenizing)
         }
     }
 }
