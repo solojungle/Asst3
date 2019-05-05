@@ -324,6 +324,7 @@ void sendArgument(char *argument, char *command, char *repo, char *argv[])
     }
     else if (strcmp(command, "9") == 0)
     { // Remove
+    	removeFile(argv[2], argv[3]);
     }
     else if (strcmp(command, "10") == 0)
     { // Current Version
