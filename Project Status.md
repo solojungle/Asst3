@@ -228,3 +228,7 @@ Status Update - Ali Awari - 5/4/19 @ 3:25PM
 ------------------------------------------------
 * Fixed sendManifest()
 * Added update()
+
+Status Update - Ali Awari - 5/4/19 @ 9:42PM
+------------------------------------------------
+* Attempted to modify manageManifest().

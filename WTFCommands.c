@@ -157,58 +157,67 @@ struct server_info *getServerConfig()
 //                      CLIENT MANIFEST FUNCTIONS DOWN BELOW
 //==================================================================================
 
-void manageManifest(char *projectName)
+void manageManifest(char *repo, int mode) // 0 is server, 1 is client
 {
     struct project_manifest *newManifest = NULL;
     struct project_manifest *oldManifest = NULL;
     struct project_manifest *updatedManifest = NULL;
-    char *projectPath = (char *)malloc((strlen(projectName) + 60) * sizeof(char));
-    if (projectPath == NULL)
+    char *manifest_path = (char *)malloc((strlen(repo) + 60) * sizeof(char));
+    if (manifest_path == NULL)
     {
         fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
         return;
     }
-    char *dirPath = (char *)malloc((strlen(projectName) + 4) * sizeof(char));
+    char *dirPath = (char *)malloc((strlen(repo) + 4) * sizeof(char));
     if (dirPath == NULL)
     {
         fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
         return;
     }
 
-    //  strcpy(projectPath, "./");
-    strcpy(projectPath, projectName);
-    strcat(projectPath, "/");
-    strcpy(dirPath, projectPath);
-    strcat(dirPath, "\0");
-    strcat(projectPath, ".manifest");
-    strcat(projectPath, "\0");
+    if (mode == 0) // server manifest
+    {
+        strcpy(manifest_path, "Projects/");
+    }
+    else
+    {
+        strcpy(manifest_path, ".server_repos/");
+    }
 
-    int fd = open(projectPath, O_RDONLY);
+    strcat(manifest_path, repo);
+    strcat(manifest_path, "/");
+    strcpy(dirPath, manifest_path);
+    strcat(dirPath, "\0");
+    strcat(manifest_path, ".manifest");
+    strcat(manifest_path, "\0");
+
+    int fd = open(manifest_path, O_RDONLY);
 
     if (fd != -1)
     { // A pre-existing .manifest file exists
         close(fd);
-        oldManifest = fetchManifest(projectPath); // Store contents of old manifest file into the oldManifest struct
+        oldManifest = fetchManifest(manifest_path); // Store contents of old manifest file into the oldManifest struct
     }
+
     newManifest = buildManifest(dirPath); // Store the new manifest data into the newManifest struct -- By default, versions are set to zero (0)
 
     if (newManifest != NULL && oldManifest != NULL)
     { // If two manifest structs now exists, then merge them together and create a new struct
         updatedManifest = updateManifest(newManifest, oldManifest);
-        outputManifestFile(updatedManifest, projectPath); // Output the merged manifest structs to a new manifest file
+        outputManifestFile(updatedManifest, manifest_path); // Output the merged manifest structs to a new manifest file
     }
     else if (newManifest != NULL && oldManifest == NULL)
-    {                                                 // If there is no pre-existing manifest file
-        outputManifestFile(newManifest, projectPath); // Output the contents of the manifest struct to a new manifest file
+    {                                                   // If there is no pre-existing manifest file
+        outputManifestFile(newManifest, manifest_path); // Output the contents of the manifest struct to a new manifest file
     }
     else
     { // If anything else is the case
         fprintf(stderr, "Error: Project directory not found!\n");
-        free(projectPath);
+        free(manifest_path);
         return;
     }
 
-    free(projectPath);            // Free dynamically allocated variable
+    free(manifest_path);          // Free dynamically allocated variable
     freeManList(newManifest);     // Free linked list
     freeManList(oldManifest);     // Free linked list
     freeManList(updatedManifest); // Free linked list
@@ -875,7 +884,7 @@ void create(char *repo, int fd)
     else
     {
         printf("%s folder has been created on server.\n", repo);
-        manageManifest(serverPath); // Creates the deafult manifest for the new server repo
+        manageManifest(serverPath, 0); // Creates the default manifest for the new server repo
         serverOK = 1;
     }
 
@@ -966,97 +975,103 @@ void destroy(char *repo, int fd)
     removeMutex("./.server_repos"); // Remove mutex
 }
 
-void checkout(char *repo, int fd){
+void checkout(char *repo, int fd)
+{
     DIR *sr = opendir("./.server_repos"); // Open directory for server projects
-    DIR *rch; // Server repo-to-be-checked-out
+    DIR *rch;                             // Server repo-to-be-checked-out
     char *checkoutNotSuccessful = "Error: Project does not exist!\n";
     char zipPath[300];
     memset(zipPath, '\0', sizeof(zipPath)); // memset the path to the tar.gz file
-    char cmd[300]; // Holds the system command to tar the directory
-    memset(cmd, '\0', sizeof(cmd)); // memset the command
+    char cmd[300];                          // Holds the system command to tar the directory
+    memset(cmd, '\0', sizeof(cmd));         // memset the command
     char buffer;
-    
-    char *serverPath = (char*)malloc((strlen(repo) + 17) * sizeof(char)); // Create path on server side for new repo
-    if(serverPath == NULL){
+
+    char *serverPath = (char *)malloc((strlen(repo) + 17) * sizeof(char)); // Create path on server side for new repo
+    if (serverPath == NULL)
+    {
         fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
         send(fd, "Error: Malloc failed to allocate memory!\n", 41, 0);
         return;
     }
-    
+
     strcpy(serverPath, "./.server_repos/"); // Setup path for server
     strcat(serverPath, repo);
     strcat(serverPath, "\0");
-    
-    if(sr == NULL){ // Check to see if the directory .server_repos exists
+
+    if (sr == NULL)
+    { // Check to see if the directory .server_repos exists
         fprintf(stderr, "Error: Server has no projects!\n");
         send(fd, "Error: Server has no projects!\n", 31, 0);
     }
     else
         closedir(sr);
-    
+
     rch = opendir(serverPath); // Open the directory-to-be-checked-out to see if it exists
-    
+
     if (rch == NULL) // If the directory does not exist
     {
         fprintf(stderr, "%sError%s: %s project does not exist.\n", RED, RESET, repo);
         send(fd, checkoutNotSuccessful, strlen(checkoutNotSuccessful), 0);
-        
+
         return;
     }
     else // If the directory exists
     {
-        closedir(rch); // Close the directory-to-be-checked-out
+        closedir(rch);                                   // Close the directory-to-be-checked-out
         strcpy(cmd, "cd ./.server_repos && tar -czvf "); // Setup the command string to zip the directory
         strcat(cmd, repo);
         strcat(cmd, ".tar.gz ");
         strcat(cmd, repo);
         printf("CMD: %s\n", cmd);
-        
+
         system(cmd); // CD to directory and Zip project (which eliminates extra file structures)
-        
+
         strcpy(zipPath, "./.server_repos/");
         strcat(zipPath, repo);
         strcat(zipPath, ".tar.gz");
-        
+
         struct files_type *tarFile = malloc(sizeof(struct files_type *));
-        
+
         int rd = open(zipPath, O_RDONLY);
-        if(rd != -1){
+        if (rd != -1)
+        {
             send(fd, "OK.\n", 3, 0);
-            tarFile -> file_length = lseek(rd, 0, SEEK_END); // find files length with lseek().
-            if (tarFile -> file_length == -1)
+            tarFile->file_length = lseek(rd, 0, SEEK_END); // find files length with lseek().
+            if (tarFile->file_length == -1)
             {
                 fprintf(stderr, "%sError%s: Lseek failed to find end of file.\n", RED, RESET);
                 close(rd); // close file.
                 return;
             }
             lseek(rd, 0, SEEK_SET); // reset file offset.
-            
-            tarFile -> filename = (char*)malloc((strlen(repo) + 8) * sizeof(char));
-            strcpy(tarFile -> filename, repo);
-            strcat(tarFile -> filename, ".tar.gz");
-            strcat(tarFile -> filename, "\0");
-            
-            tarFile -> filename_length = strlen(tarFile -> filename);
-            
-            char fileContents[tarFile -> file_length];
+
+            tarFile->filename = (char *)malloc((strlen(repo) + 8) * sizeof(char));
+            strcpy(tarFile->filename, repo);
+            strcat(tarFile->filename, ".tar.gz");
+            strcat(tarFile->filename, "\0");
+
+            tarFile->filename_length = strlen(tarFile->filename);
+
+            char fileContents[tarFile->file_length];
             int i = 0;
-            for(i = 0; i < (tarFile -> file_length); ++i){
+            for (i = 0; i < (tarFile->file_length); ++i)
+            {
                 read(rd, &buffer, 1);
                 fileContents[i] = buffer;
             }
-            
-            tarFile -> file = fileContents;
-            tarFile -> next = NULL;
-            
+
+            tarFile->file = fileContents;
+            tarFile->next = NULL;
+
             sendTar(tarFile, fd);
             remove(zipPath);
         }
-        else{
-            fprintf(stderr,"Error: Could not open file!\n");
+        else
+        {
+            fprintf(stderr, "Error: Could not open file!\n");
             send(fd, "Error: Could not open file!\n", 28, 0);
         }
-        
+
         close(rd);
     }
 }

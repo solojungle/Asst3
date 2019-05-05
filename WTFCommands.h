@@ -44,7 +44,7 @@ extern void createConfig(char *, char *);
 extern struct server_info *getServerConfig();
 
 // Client Manifest Functions
-void manageManifest(char *);                                                                   // Coordinates and manages the manifest
+void manageManifest(char *, int);                                                              // Coordinates and manages the manifest
 struct project_manifest *buildManifest(char *);                                                // Build a manifest with the current files
 struct project_manifest *fetchManifest(char *);                                                // Fetch a manifest if one already exists
 struct project_manifest *updateManifest(struct project_manifest *, struct project_manifest *); // Merge two manifests together
