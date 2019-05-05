@@ -232,3 +232,9 @@ Status Update - Ali Awari - 5/4/19 @ 3:25PM
 Status Update - Ali Awari - 5/4/19 @ 9:42PM
 ------------------------------------------------
 * Attempted to modify manageManifest().
+
+Status Update - Dennis Kager - 5/04/19 @ 11:22PM
+------------------------------------------------
+* Fixed manageManifest()
+* Removed extraneous code I left in SocketLibrary.c
+* Added add() function. Note: I designed add() to only work when both a) the project repo exists and b) the file being added to the .manifest file is in the project repo

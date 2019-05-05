@@ -15,7 +15,7 @@
 
 // Forward Declarations
 
-void sendArgument(char *, char *, char *);
+void sendArgument(char *, char *, char *, char **);
 void handleArguments(int, char **);
 void update(char *, char *, char *, int);
 

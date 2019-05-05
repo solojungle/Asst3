@@ -61,5 +61,6 @@ void removeFiles(char *);   // Removes files in a directory
 void create(char *, int);   // Creates repository for both server and client
 void destroy(char *, int);  // Destroys a repository on the server
 void checkout(char *, int); // Distributes a copy of a project to the client from the server
+void add(char *, char *);	// Add a new file entry to the .manifest file
 
 #endif /* _WTFCOMMANDS_h */

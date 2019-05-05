@@ -45,12 +45,12 @@ extern void getIPAddress(int, char *);
 extern void createFilesFromStream(char *);
 extern void sendFiles(struct files_type *, int);
 extern void outputFiles(struct files_type *, char *, int);
+extern void sendTar(struct files_type *, int);
+extern void receiveTar(int, char *, int);
+extern void unTar(struct files_type *, char *, int);
 extern struct files_type *receiveFiles(int);
 extern struct files_type *createFileList(char **, int);
 extern struct files_type *append(struct files_type *, struct files_type *);
 extern struct files_type *initializeFileNode(char *, int, char *, int);
 
-extern void sendTar(struct files_type *, int);
-extern void receiveTar(int fd, char *, int);
-extern void unTar(struct files_type *, char *, int);
 #endif /* _SOCKETLIBRARY_h */
