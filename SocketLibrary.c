@@ -452,7 +452,7 @@ struct files_type *decodeString(int fd)
 
         cursor->file = realloc(cursor->file, cursor->file_length + 1); // realloc to file content size.
         memset(cursor->file, '\0', cursor->file_length + 1);           // remove previous contents.
-        strcpy(cursor->file, temp);                                // place correct content.
+        strcpy(cursor->file, temp);                                    // place correct content.
 
         cursor = cursor->next;
     }
@@ -725,101 +725,104 @@ char *intToStr(long int val, char *dst, int radix)
     return dst - 1;
 }
 
-void sendTar(struct files_type *tarFile, int fd){
-    int file_length = tarFile -> file_length; // Length of the file
-    int filename_length = tarFile -> filename_length; // Length of the file name
-    char charFileLength[512]; // Char representation of the file length
-    char charFilenameLength[512]; // Char representation of the file name length
-    char bufferSize[512]; // Char representation of the buffer size
-    memset(bufferSize, '\0', 512); // memset the buffer size
-    memset(charFileLength, '\0', 512); // memset the char representation of the character buffer
-    memset(charFilenameLength, '\0', 512); // memset the char representation of the length of the file name
-    int index = 0; // Index for copying the file contents into the buffer
-    
-    intToStr(file_length, charFileLength, 10); // Convert the length of the file to string representation
+void sendTar(struct files_type *tarFile, int fd)
+{
+    int file_length = tarFile->file_length;         // Length of the file
+    int filename_length = tarFile->filename_length; // Length of the file name
+    char charFileLength[512];                       // Char representation of the file length
+    char charFilenameLength[512];                   // Char representation of the file name length
+    char bufferSize[512];                           // Char representation of the buffer size
+    memset(bufferSize, '\0', 512);                  // memset the buffer size
+    memset(charFileLength, '\0', 512);              // memset the char representation of the character buffer
+    memset(charFilenameLength, '\0', 512);          // memset the char representation of the length of the file name
+    int index = 0;                                  // Index for copying the file contents into the buffer
+
+    intToStr(file_length, charFileLength, 10);         // Convert the length of the file to string representation
     intToStr(filename_length, charFilenameLength, 10); // Convert the length of the file name to string representation
-    
+
     // Bytes needed for sending the file over the server
     int space_required = file_length + filename_length + strlen(charFileLength) + strlen(charFilenameLength) + 3;
-    char buffer[space_required]; // Buffer to hold the file contents to be sent
+    char buffer[space_required];          // Buffer to hold the file contents to be sent
     memset(buffer, '\0', space_required); // memset the buffer
-    
+
     // Create string to be sent over server with format-- <filenameLength>:<filename>:<fileLength>:<fileContents>
     strcpy(buffer, charFilenameLength);
     strcat(buffer, ":");
-    strcat(buffer, tarFile -> filename);
+    strcat(buffer, tarFile->filename);
     strcat(buffer, ":");
     strcat(buffer, charFileLength);
     strcat(buffer, ":");
-    index = strlen(charFilenameLength) + strlen(tarFile -> filename) + strlen(charFileLength) + 3;
-    
+    index = strlen(charFilenameLength) + strlen(tarFile->filename) + strlen(charFileLength) + 3;
+
     int i = 0; // Copy each byte to the buffer to be sent over
-    for(i = 0; i < file_length; ++i){
-        buffer[index] = tarFile -> file[i];
+    for (i = 0; i < file_length; ++i)
+    {
+        buffer[index] = tarFile->file[i];
         ++index;
     }
-    
+
     send(fd, buffer, space_required, 0); // Send tar file to client
 }
 
-void receiveTar(int fd, char *repo, int mode){
+void receiveTar(int fd, char *repo, int mode)
+{
     struct files_type *tarFile = malloc(sizeof(struct files_type *));
-    char *junk = malloc(1*sizeof(char)); // Buffer to receive intermediary ':' symbol
-    
-    int filenameLength = findDigit(fd); // Get the length of the file name
-    char filename[filenameLength]; // Setup the buffer for the file name
+    char *junk = malloc(1 * sizeof(char)); // Buffer to receive intermediary ':' symbol
+
+    int filenameLength = findDigit(fd);    // Get the length of the file name
+    char filename[filenameLength];         // Setup the buffer for the file name
     recv(fd, filename, filenameLength, 0); // Store the file name in the buffer
-    
+
     recv(fd, junk, 1, 0); // Move past the ':' to get to the actual file
-    
-    int fileLength = findDigit(fd); // Get the length of the file
-    char fileContents[fileLength]; // Setup the buffer to hold the file contents
+
+    int fileLength = findDigit(fd);        // Get the length of the file
+    char fileContents[fileLength];         // Setup the buffer to hold the file contents
     recv(fd, fileContents, fileLength, 0); // Receive the file contents
-    
+
     // Setup the struct to hold the file name and data
-    tarFile -> file_length = fileLength;
-    tarFile -> file = fileContents;
-    tarFile -> filename_length = filenameLength;
-    tarFile -> filename = filename;
-    
+    tarFile->file_length = fileLength;
+    tarFile->file = fileContents;
+    tarFile->filename_length = filenameLength;
+    tarFile->filename = filename;
+
     unTar(tarFile, repo, mode); // Decompress the tar file
-    
+
     free(tarFile); // Free struct holding the tar file
-    free(junk);       // Free junk buffer
+    free(junk);    // Free junk buffer
 }
 
-void unTar(struct files_type *cursor, char *repo, int mode){
-    char path[200]; // Holds the path to the tar file
-    int wd; // File descriptor for creating the tar file
-    char cmd[226]; // Command buffer
-    memset(cmd, '\0', 219); // memset the command buffer
+void unTar(struct files_type *cursor, char *repo, int mode)
+{
+    char path[200];                   // Holds the path to the tar file
+    int wd;                           // File descriptor for creating the tar file
+    char cmd[226];                    // Command buffer
+    memset(cmd, '\0', 219);           // memset the command buffer
     memset(path, '\0', sizeof(path)); // memset the path
-    
+
     // Create the path
     strcpy(path, "./Projects/");
-    strcat(path, cursor -> filename);
+    strcat(path, cursor->filename);
     strcat(path, "\0");
-    
+
     // Create the command
     strcpy(cmd, "cd ./Projects && tar xvzf ");
-    strcat(cmd, cursor -> filename);
+    strcat(cmd, cursor->filename);
     strcat(cmd, "\0");
-    
+
     // Decompress the tar file
     wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
-    if(wd != -1){
-        write(wd, cursor -> file, cursor -> file_length);
-        printf("%s file %sadded%s to %s\n", cursor -> filename, GREEN, RESET, path);
-        printf("%sDeompressing%s %s...\n", YELLOW, RESET, cursor -> filename);
+    if (wd != -1)
+    {
+        write(wd, cursor->file, cursor->file_length);
+        printf("%s file %sadded%s to %s\n", cursor->filename, GREEN, RESET, path);
+        printf("%sDeompressing%s %s...\n", YELLOW, RESET, cursor->filename);
         system(cmd); // Decompress tar file
         printf("Decompression %ssuccessful%s!\n", GREEN, RESET);
         remove(path); // Remove the tar file
-        printf("%s%s removed from %s%s\n", YELLOW, cursor -> filename, path, RESET);
+        printf("%s%s removed from %s%s\n", YELLOW, cursor->filename, path, RESET);
     }
     else
         fprintf(stderr, "Error: Could not create file!\n");
-    
-    
+
     close(wd);
-    
 }
