@@ -1140,6 +1140,44 @@ void add(char *repo, char *file){
 	printf("%s file %sadded%s as an entry to .manifest\n", file, GREEN, RESET);
 }
 
+void removeFile(char *repo, char *file){
+	char *repoPath = (char*)malloc((strlen(repo) + 12) * sizeof(char));
+	char *filePath = (char*)malloc((strlen(repo) + strlen(file) + 13) * sizeof(char));
+	
+	if(repoPath == NULL || filePath == NULL){
+		fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
+		exit(EXIT_FAILURE);
+	}
+	
+	strcpy(repoPath, "./Projects/"); // Setup path to repository
+	strcat(repoPath, repo);
+	strcat(repoPath, "\0");
+	strcpy(filePath, repoPath); // Setup path to file
+	strcat(filePath, "/");
+	strcat(filePath, file);
+	strcat(filePath, "\0");
+	
+	DIR *rd = opendir(repoPath);
+
+	if(rd == NULL){ // Check to see if the repo exists
+		fprintf(stderr, "%sError:%s Projects/ folder not found!\n", RED, RESET);
+		exit(EXIT_FAILURE);
+	}
+	closedir(rd);
+	
+	int fd = open(filePath, O_RDONLY);
+	if(fd == -1){ // Check to see if the file exists
+		fprintf(stderr, "%sError:%s %s file does not exist in Projects/ folder!\n", RED, RESET, file);
+		printf("%sPlease make sure %s is in the Projects/ folder before removing entry to .manifest%s\n", YELLOW, file, RESET);
+		exit(EXIT_FAILURE);
+	}
+	close(fd);
+	
+	remove(filePath); // Remove file from repo
+	manageManifest(repo, 1); // Create manifest entry
+	printf("%s file entry %sremoved%s from .manifest and %s\n", file, GREEN, RESET, repoPath);
+}
+
 
 
 
