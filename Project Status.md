@@ -259,3 +259,9 @@ Status Update - Ali Awari - 5/6/19 @ 12:30AM
 * Added fileLiveHash().
 * Rewrote update().
 * TODO: Test is all.
+
+Status Update - Dennis Kager - 5/06/19 @ 4:16PM
+------------------------------------------------
+* Added history() function
+* Manifest functions now ignore .Update when generating the manifest
+* TODO: Bug in TCPServer.c where is segfaults after doing the history and after it prints the issued command
