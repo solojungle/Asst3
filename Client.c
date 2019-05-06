@@ -324,7 +324,7 @@ void sendArgument(char *argument, char *command, char *repo, char *argv[])
     }
     else if (strcmp(command, "9") == 0)
     { // Remove
-    	removeFile(argv[2], argv[3]);
+        removeFile(argv[2], argv[3]);
     }
     else if (strcmp(command, "10") == 0)
     { // Current Version
@@ -385,262 +385,440 @@ void update(char *argument, char *command, char *repo, int fd)
         fprintf(stderr, "%sError%s: Unable to grab the current version of .manifest.\n", RED, RESET);
         return;
     }
-    else
+
+    // ====================================================================================================
+
+    DIR *dir;                             // in case somehow the folder was left over.
+    if ((dir = opendir(".temp")) != NULL) // check to see if folder was left over.
     {
-        DIR *dir = opendir(".temp"); // in case somehow the folder was left over.
-        if (dir)                     // check to see if folder was left over.
+        closedir(dir);
+        remove(".temp/.manifest");
+        rmdir(".temp");
+    }
+
+    // ====================================================================================================
+
+    if (mkdir(".temp", S_IRWXU | S_IRWXG) == -1)
+    {
+        fprintf(stderr, "%sError%s: Directory failed to be created.\n", RED, RESET);
+        return;
+    }
+
+    int temp_length = 6 + strlen(server_file->filename) + 1; // .temp/ + file_name + \0
+    char temp_manifest_path[temp_length];
+    memset(temp_manifest_path, '\0', temp_length);
+
+    strcpy(temp_manifest_path, ".temp/"); // 6
+    strcat(temp_manifest_path, server_file->filename);
+
+    int wd;
+    if ((wd = open(temp_manifest_path, O_CREAT | O_WRONLY | O_TRUNC, 0644)) == -1)
+    {
+        fprintf(stderr, "%sError%s: Could not open file.\n", RED, RESET);
+        rmdir(".temp");
+        return;
+    }
+
+    if (write(wd, server_file->file, server_file->file_length) == -1)
+    {
+        fprintf(stderr, "%sError%s: Could not write file.\n", RED, RESET);
+        remove(temp_manifest_path);
+        rmdir(".temp");
+        return;
+    }
+
+    close(wd);
+
+    if ((server_manifest = fetchManifest(".temp/.manifest")) == NULL) // fetch.
+    {
+        fprintf(stderr, "%sError%s: server_manifest is NULL\n", RED, RESET);
+        remove(temp_manifest_path);
+        rmdir(".temp");
+        return;
+    }
+
+    if (remove(temp_manifest_path) != 0) // remove file.
+    {
+        fprintf(stderr, "%sError%s: temp_manifest_path failed to be removed.\n", RED, RESET);
+        return;
+    }
+
+    if (rmdir(".temp") == -1) // remove dir.
+    {
+        fprintf(stderr, "%sError%s: Directory failed to be deleted.\n", RED, RESET);
+        return;
+    }
+
+    // ====================================================================================================
+
+    struct project_manifest *outer_cursor = client_manifest;
+    int numberOfFilesInClient = -1;
+
+    while (outer_cursor != NULL)
+    {
+        numberOfFilesInClient += 1;
+        outer_cursor = outer_cursor->nextNode;
+    }
+
+    outer_cursor = client_manifest->nextNode; // setup for loop
+
+    if (numberOfFilesInClient == 0)
+    {
+        fprintf(stderr, "%sWarning%s: Client .manifest is empty.\n", RED, RESET);
+        return;
+    }
+
+    // ====================================================================================================
+
+    struct project_manifest *inner_cursor = server_manifest;
+    int numberOfFilesInServer = -1;
+
+    while (inner_cursor != NULL)
+    {
+        numberOfFilesInServer += 1;
+        inner_cursor = inner_cursor->nextNode;
+    }
+
+    inner_cursor = server_manifest->nextNode; // setup for loop
+
+    // ====================================================================================================
+
+    struct project_manifest *fileMissingFromServer[numberOfFilesInClient];
+    struct project_manifest *fileMissingFromClient[numberOfFilesInServer];
+    struct project_manifest *fileInBothC[numberOfFilesInServer + numberOfFilesInClient];
+    struct project_manifest *fileInBothS[numberOfFilesInServer + numberOfFilesInClient];
+
+    int FMFS = 0; // File missing from server.
+    int FMFC = 0; // File missing from client.
+    int FIB = 0;  // File in both.
+
+    int index = 0;
+    int exists = 0;
+    while (outer_cursor != NULL) // client files
+    {
+        while (inner_cursor != NULL) // server files
         {
-            closedir(dir);
-            remove(".temp/.manifest");
-            rmdir(".temp");
-        }
-
-        if (mkdir(".temp", S_IRWXU | S_IRWXG) == -1)
-        {
-            fprintf(stderr, "%sError%s: Directory failed to be created.\n", RED, RESET);
-            return;
-        }
-
-        int temp_length = 6 + strlen(server_file->filename) + 1;
-        char temp_manifest_path[temp_length];
-        memset(temp_manifest_path, '\0', temp_length);
-
-        strcpy(temp_manifest_path, ".temp/"); // 6
-        strcat(temp_manifest_path, server_file->filename);
-
-        int wd = open(temp_manifest_path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
-        if (wd == -1)
-        {
-            fprintf(stderr, "%sError%s: Could not open file.\n", RED, RESET);
-            rmdir(".temp");
-            return;
-        }
-
-        if (write(wd, server_file->file, server_file->file_length) == -1)
-        {
-            fprintf(stderr, "%sError%s: Could not write file.\n", RED, RESET);
-            remove(temp_manifest_path);
-            rmdir(".temp");
-            return;
-        }
-        close(wd);
-
-        if ((server_manifest = fetchManifest(".temp/.manifest")) == NULL) // fetch.
-        {
-            fprintf(stderr, "%sError%s: server_manifest is NULL\n", RED, RESET);
-            remove(temp_manifest_path);
-            rmdir(".temp");
-            return;
-        }
-
-        if (remove(temp_manifest_path) != 0) // remove file.
-        {
-            fprintf(stderr, "%sError%s: temp_manifest_path failed to be removed.\n", RED, RESET);
-            return;
-        }
-
-        if (rmdir(".temp") == -1) // remove dir.
-        {
-            fprintf(stderr, "%sError%s: Directory failed to be deleted.\n", RED, RESET);
-            return;
-        }
-
-        // ====================================================================================================
-
-        struct project_manifest *client_cursor = client_manifest;
-        int numberOfFilesInClient = -1;
-
-        while (client_cursor != NULL)
-        {
-            numberOfFilesInClient += 1;
-            client_cursor = client_cursor->nextNode;
-        }
-
-        if (numberOfFilesInClient == 0)
-        {
-            fprintf(stderr, "%sWarning%s: Client .manifest is empty.\n", RED, RESET);
-            return;
-        }
-
-        // ====================================================================================================
-
-        struct project_manifest *server_cursor = server_manifest;
-        int numberOfFilesInServer = -1;
-
-        while (server_cursor != NULL)
-        {
-            numberOfFilesInServer += 1;
-            server_cursor = server_cursor->nextNode;
-        }
-
-        // ====================================================================================================
-
-        struct project_manifest *cursor = client_manifest->nextNode;
-        struct project_manifest *inner_cursor = server_manifest->nextNode;
-
-        int index = 0;
-        int existsIn;
-        int differentHash;
-
-        int numberOfNIS = 0; // not in server.
-        int numberOfNIC = 0; // not in client.
-        int numberOfHID = 0; // hash is different.
-
-        struct project_manifest *notInServerManifest[numberOfFilesInClient + 1];                     // sizeof client manifest
-        struct project_manifest *notInClientManifest[numberOfFilesInServer + 1];                     // sizeof server manifest
-        struct project_manifest *hashIsDifferent[numberOfFilesInClient + numberOfFilesInServer + 1]; // more efficient to do max(a, b), but this will never fail either.
-
-        memset(notInServerManifest, '\0', numberOfFilesInClient + 1);
-        memset(notInClientManifest, '\0', numberOfFilesInServer + 1);
-        memset(hashIsDifferent, '\0', numberOfFilesInClient + numberOfFilesInServer + 1);
-
-        while (cursor != NULL)
-        {
-            existsIn = 0;
-            differentHash = 0;
-
-            while (inner_cursor != NULL)
+            if (strcmp(inner_cursor->file, outer_cursor->file) == 0) // exists in both
             {
-                if (strcmp(inner_cursor->file, cursor->file) == 0) // same name
+                exists = 1;
+                break;
+            }
+            inner_cursor = inner_cursor->nextNode;
+        }
+
+        if (exists)
+        {
+            FIB += 1;
+            fileInBothC[index] = outer_cursor;
+            fileInBothS[index] = inner_cursor;
+        }
+        else
+        {
+            FMFS += 1;
+            fileMissingFromServer[index] = outer_cursor;
+        }
+
+        exists = 0;                               // reset
+        index += 1;                               // increment
+        inner_cursor = server_manifest->nextNode; // reset.
+        outer_cursor = outer_cursor->nextNode;    // increment.
+    }
+
+    index = 0;
+    exists = 0;
+    inner_cursor = client_manifest->nextNode;
+    outer_cursor = server_manifest->nextNode;
+    while (outer_cursor != NULL) // server files
+    {
+        while (inner_cursor != NULL) // client files
+        {
+            if (strcmp(inner_cursor->file, outer_cursor->file) == 0) // exists in both
+            {
+                exists = 1;
+                break;
+            }
+            inner_cursor = inner_cursor->nextNode;
+        }
+
+        if (!exists)
+        {
+            FMFC += 1;
+            fileMissingFromClient[index] = outer_cursor;
+        }
+
+        exists = 0;                               // reset
+        index += 1;                               // increment
+        inner_cursor = client_manifest->nextNode; // reset.
+        outer_cursor = outer_cursor->nextNode;    // increment.
+    }
+
+    // ====================================================================================================
+
+    struct project_manifest *uploadA[FMFS];
+    struct project_manifest *uploadB[FIB];
+    struct project_manifest *modify[FIB];
+    struct project_manifest *added[FMFC];
+    struct project_manifest *deleted[FMFS];
+    struct project_manifest *conflict[FIB];
+
+    int UA = 0; // upload A count.
+    int UB = 0; // upload B count.
+    int M = 0;  // modify count.
+    int A = 0;  // added count.
+    int D = 0;  // deleted count.
+    int C = 0;  // conflict count.
+
+    if (strcmp(client_manifest->repoVersion, server_manifest->repoVersion) == 0)
+    {
+        if (FIB != 0) // upload 1b: File in both server & client.
+        {
+            int i = 0;
+            while (i < FIB)
+            {
+                char *hash = fileLiveHash(fileInBothC[i]->file);
+                if (strcmp(fileInBothS[i]->hash, hash) != 0)
                 {
-                    existsIn = 1;
-                    if (strcmp(inner_cursor->hash, cursor->hash) != 0)
-                    {
-                        differentHash = 1;
-                    }
-                    break;
+                    uploadB[UB] = fileInBothC[i];
+                    UB += 1;
                 }
-
-                inner_cursor = inner_cursor->nextNode;
-            }
-
-            if (!existsIn)
-            {
-                numberOfNIS += 1;
-                notInServerManifest[index] = cursor;
-            }
-
-            if (differentHash)
-            {
-                numberOfHID += 1;
-                hashIsDifferent[index] = cursor;
-            }
-
-            index += 1;
-            inner_cursor = server_manifest;
-            cursor = cursor->nextNode;
-        }
-
-        // ====================================================================================================
-
-        cursor = server_manifest->nextNode;
-        inner_cursor = client_manifest->nextNode;
-
-        index = 0;
-        while (cursor != NULL)
-        {
-            existsIn = 0;
-
-            while (inner_cursor != NULL)
-            {
-                if (strcmp(inner_cursor->file, cursor->file) == 0) // same name
-                {
-                    existsIn = 1;
-                    break;
-                }
-
-                inner_cursor = inner_cursor->nextNode;
-            }
-
-            if (!existsIn)
-            {
-                numberOfNIC += 1;
-                notInClientManifest[index] = cursor;
-            }
-
-            index += 1;
-            inner_cursor = client_manifest;
-            cursor = cursor->nextNode;
-        }
-
-        // ====================================================================================================
-
-        int path_length = 9 + strlen(repo) + 9;
-        char path[path_length];
-        memset(path, '\0', path_length);
-
-        strcpy(path, "Projects/");
-        strcat(path, repo);
-        strcat(path, "/.Update");
-
-        wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU); // create .Update.
-
-        if (strcmp(server_manifest->repoVersion, client_manifest->repoVersion) == 0) // same version
-        {
-            /* File not in server .manifest */
-            if (numberOfNIS > 0)
-            {
-                int i = 0;
-                while (numberOfNIS != i)
-                {
-                    printf("U %s\n", notInServerManifest[i]->file);
-                    i += 1;
-                }
-            }
-
-            if (numberOfHID > 0)
-            {
-                int i = 0;
-                while (numberOfHID != i)
-                {
-                    printf("U %s\n", hashIsDifferent[i]->file);
-                    i += 1;
-                }
+                free(hash);
+                i += 1;
             }
         }
-        else // different version
+        if (FMFS != 0) // upload 1a: File not in server.
         {
-            // Case 2 (modify):
-            // 	File in client .manifest
-            // 	File in server .manifest
-            // 	.manifests are different versions
-            // 	Files hash in client is same in client .manifest
-
-            if (numberOfNIC > 0) // Case 3 (added)
+            int i = 0;
+            while (i < FMFS)
             {
-                int i = 0;
-                while (numberOfNIC != i)
-                {
-                    printf("A %s\n", notInClientManifest[i]->file);
-                    write(wd, "A ", 2);
-                    write(wd, notInServerManifest[i]->fileVersion, strlen(notInServerManifest[i]->fileVersion));
-                    write(wd, " ", 1);
-                    write(wd, notInServerManifest[i]->file, strlen(notInServerManifest[i]->file));
-                    write(wd, " ", 1);
-                    write(wd, notInServerManifest[i]->hash, strlen(notInServerManifest[i]->hash));
-                    write(wd, "\n", 1);
-                    i += 1;
-                }
+                uploadA[UA] = fileMissingFromServer[i];
+                UA += 1;
+                i += 1;
             }
-
-            if (numberOfNIS > 0) // Case 4 (deleted)
-            {
-                int i = 0;
-                while (numberOfNIS != i)
-                {
-                    printf("D %s\n", notInServerManifest[i]->file);
-                    write(wd, "D ", 2);
-                    write(wd, notInServerManifest[i]->fileVersion, strlen(notInServerManifest[i]->fileVersion));
-                    write(wd, " ", 1);
-                    write(wd, notInServerManifest[i]->file, strlen(notInServerManifest[i]->file));
-                    write(wd, " ", 1);
-                    write(wd, notInServerManifest[i]->hash, strlen(notInServerManifest[i]->hash));
-                    write(wd, "\n", 1);
-                    i += 1;
-                }
-            }
-
-            write(wd, "\n", 1); // Ends the last line with a new line (leaves empty line at the end of the file which is helpful for tokenizing)
         }
     }
+    else
+    {
+        if (FIB == 0) // modify
+        {
+            int i = 0;
+            while (i < FIB)
+            {
+                if (strcmp(fileInBothC[i]->fileVersion, fileInBothS[i]->fileVersion) != 0) // If file versions are different.
+                {
+                    char *hash = fileLiveHash(fileInBothC[i]->file); // Grab live hash.
+                    if (strcmp(fileInBothC[i]->hash, hash) == 0)     // If client manifest and live hashes are the same.
+                    {
+                        modify[M] = fileInBothS[i];
+                        M += 1;
+                    }
+                    else
+                    {
+                        conflict[C] = fileInBothC[i];
+                        C += 1;
+                    }
+                    free(hash);
+                }
+                i += 1;
+            }
+        }
+        if (FMFS == 0) // deleted
+        {
+            int i = 0;
+            while (i < FMFS)
+            {
+                deleted[D] = fileMissingFromServer[i];
+                D += 1;
+                i += 1;
+            }
+        }
+        if (FMFC == 0) // added
+        {
+            int i = 0;
+            while (i < FMFC)
+            {
+                added[A] = fileMissingFromClient[i];
+                A += 1;
+                i += 1;
+            }
+        }
+    }
+
+    // ====================================================================================================
+
+    if (C > 0) //  If conflicts are found, the client program should not write a .Update.
+    {
+        int i = 0;
+        while (i < C)
+        {
+            printf("Conflict: %s\n", conflict[i]->file);
+        }
+        return;
+    }
+
+    int path_length = 9 + strlen(repo) + 9;
+    char path[path_length];
+    memset(path, '\0', path_length);
+
+    strcpy(path, "Projects/");
+    strcat(path, repo);
+    strcat(path, "/.Update");
+
+    wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU); // create .Update.
+
+    if (UA > 0)
+    {
+        int i = 0;
+        while (i < UA)
+        {
+            printf("U %s\n", uploadA[i]->file);
+            write(wd, "U ", 2);
+            write(wd, uploadA[i]->fileVersion, strlen(uploadA[i]->fileVersion));
+            write(wd, " ", 1);
+            write(wd, uploadA[i]->file, strlen(uploadA[i]->file));
+            write(wd, " ", 1);
+            write(wd, uploadA[i]->hash, strlen(uploadA[i]->hash));
+            write(wd, "\n", 1);
+            i += 1;
+        }
+    }
+
+    if (UB > 0)
+    {
+        int i = 0;
+        while (i < UB)
+        {
+            printf("U %s\n", uploadB[i]->file);
+            write(wd, "U ", 2);
+            write(wd, uploadB[i]->fileVersion, strlen(uploadB[i]->fileVersion));
+            write(wd, " ", 1);
+            write(wd, uploadB[i]->file, strlen(uploadB[i]->file));
+            write(wd, " ", 1);
+            write(wd, uploadB[i]->hash, strlen(uploadB[i]->hash));
+            write(wd, "\n", 1);
+            i += 1;
+        }
+    }
+
+    if (M > 0)
+    {
+        int i = 0;
+        while (i < M)
+        {
+            printf("M %s\n", modify[i]->file);
+            write(wd, "M ", 2);
+            write(wd, modify[i]->fileVersion, strlen(modify[i]->fileVersion));
+            write(wd, " ", 1);
+            write(wd, modify[i]->file, strlen(modify[i]->file));
+            write(wd, " ", 1);
+            write(wd, modify[i]->hash, strlen(modify[i]->hash));
+            write(wd, "\n", 1);
+            i += 1;
+        }
+    }
+
+    if (A > 0)
+    {
+        int i = 0;
+        while (i < A)
+        {
+            printf("A %s\n", added[i]->file);
+            write(wd, "A ", 2);
+            write(wd, added[i]->fileVersion, strlen(added[i]->fileVersion));
+            write(wd, " ", 1);
+            write(wd, added[i]->file, strlen(added[i]->file));
+            write(wd, " ", 1);
+            write(wd, added[i]->hash, strlen(added[i]->hash));
+            write(wd, "\n", 1);
+            i += 1;
+        }
+    }
+
+    if (D > 0)
+    {
+        int i = 0;
+        while (i < D)
+        {
+            printf("D %s\n", deleted[i]->file);
+            write(wd, "D ", 2);
+            write(wd, deleted[i]->fileVersion, strlen(deleted[i]->fileVersion));
+            write(wd, " ", 1);
+            write(wd, deleted[i]->file, strlen(deleted[i]->file));
+            write(wd, " ", 1);
+            write(wd, deleted[i]->hash, strlen(deleted[i]->hash));
+            write(wd, "\n", 1);
+            i += 1;
+        }
+    }
+    write(wd, "\n", 1); // Ends the last line with a new line (leaves empty line at the end of the file which is helpful for tokenizing)
+
+    close(wd);
+    return;
+}
+
+char *fileLiveHash(char *path)
+{
+    int fd;
+    int file_length;
+    char *hash_char;
+    char *hash_string;
+
+    if ((fd = open(path, O_RDONLY)) == -1)
+    {
+        fprintf(stderr, "Error: File could not be opened!\n");
+        return NULL;
+    }
+
+    if ((file_length = lseek(fd, 0, SEEK_END)) == -1)
+    {
+        fprintf(stderr, "Error: lseek failed to find end of file.\n");
+        return NULL;
+    }
+
+    lseek(fd, 0, SEEK_SET); // reset file offset
+
+    if (file_length == 0)
+    {
+        fprintf(stderr, "Error: File is empty.\n");
+        return NULL;
+    }
+
+    char file_buffer[file_length + 1];
+    memset(file_buffer, '\0', file_length + 1); // remove garbage chars.
+
+    if (read(fd, file_buffer, file_length) == -1)
+    {
+        fprintf(stderr, "Error: Failed to read file to hash.\n");
+        return NULL;
+    }
+
+    const char *string = file_buffer;                        // Point to the contents of the buffer with a const char *
+    unsigned char *hash = SHA256(string, strlen(string), 0); // Get the hash of the string (in hexadecimal)
+
+    if ((hash_char = malloc(1)) == NULL)
+    {
+        fprintf(stderr, "Error: Malloc failed to allocate memory for hash string.\n");
+        return NULL;
+    }
+
+    char temp_buffer[33];          // String that holds converted hash
+    memset(temp_buffer, '\0', 33); // remove garbage chars.
+
+    int i; // Iterate through the hash
+    for (i = 0; i < SHA256_DIGEST_LENGTH; ++i)
+    {
+        sprintf(hash_char, "%02x", hash[i]);
+        temp_buffer[i] = *hash_char;
+    }
+
+    free(hash_char); // free after using.
+
+    if ((hash_string = (char *)malloc(33)) == NULL)
+    {
+        fprintf(stderr, "Error: Malloc failed to allocate memory for hash string.\n");
+        return NULL;
+    }
+
+    strcpy(hash_string, temp_buffer); // Copy the converted hash into a char*
+
+    return hash_string;
 }

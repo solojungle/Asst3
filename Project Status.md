@@ -242,10 +242,16 @@ Status Update - Dennis Kager - 5/04/19 @ 11:22PM
 Status Update - Ali Awari - 5/5/19 @ 3:42AM
 ------------------------------------------------
 * Update() will print out the differences in files. (Upload case a. was only one currently tested).
-* TODO: write to .Update file
+* TODO: write to .Update file.
 
 Status Update - Dennis Kager - 5/05/19 @ 6:10PM
 ------------------------------------------------
 * Renamed command for destroy to be removeProj()
 * Added removeFile() for the remove command to take an entry out of the manifest
 * Attempting to localize create() so that it is relative to the client side
+
+Status Update - Ali Awari - 5/6/19 @ 12:30AM
+------------------------------------------------
+* Added fileLiveHash().
+* Rewrote update().
+* TODO: Test is all.
