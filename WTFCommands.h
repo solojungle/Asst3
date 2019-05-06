@@ -54,16 +54,19 @@ void freeManList(struct project_manifest *);                                    
 void printManifest(struct project_manifest *);                                                 // For Debugging
 
 // Commands
-void checkStatus(char *);   				// Checks to see if the repo is free to work on
-void createMutex(char *);   				// Creates a project mutex
-void removeMutex(char *);  	 				// Removes a file mutex
-void removeFiles(char *);   				// Removes files in a directory
-void create(char *, int);   				// Creates repository for both server and client
-void destroy(char *, int);  				// Destroys a repository on the server
-void checkout(char *, int); 				// Distributes a copy of a project to the client from the server
-void add(char *, char *);					// Add a new file entry to the .manifest file
-void removeFile(char *, char *);			// Remove a file entry from the .manifest file
-void updateHistory(char *, char *, int);	// Update the .history file
-void history(char *, int);						// Fetch the history for the client
+void checkStatus(char *);                // Checks to see if the repo is free to work on
+void createMutex(char *);                // Creates a project mutex
+void removeMutex(char *);                // Removes a file mutex
+void removeFiles(char *);                // Removes files in a directory
+void create(char *, int);                // Creates repository for both server and client
+void destroy(char *, int);               // Destroys a repository on the server
+void checkout(char *, int);              // Distributes a copy of a project to the client from the server
+void add(char *, char *);                // Add a new file entry to the .manifest file
+void removeFile(char *, char *);         // Remove a file entry from the .manifest file
+void updateHistory(char *, char *, int); // Update the .history file
+void history(char *, int);               // Fetch the history for the client
+
+// Helper
+void sendUpgradeFiles(char *, int);
 
 #endif /* _WTFCOMMANDS_h */

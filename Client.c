@@ -295,10 +295,11 @@ void sendArgument(char *argument, char *command, char *repo, char *argv[])
     }
     else if (strcmp(command, "2") == 0) // Update
     {
-        update(argument, command, repo, server.socket_fd);
+        update(repo, server.socket_fd);
     }
     else if (strcmp(command, "3") == 0)
     { // Upgrade
+        upgrade(repo, server.socket_fd);
     }
     else if (strcmp(command, "4") == 0)
     { // Commit
@@ -308,59 +309,61 @@ void sendArgument(char *argument, char *command, char *repo, char *argv[])
     }
     else if (strcmp(command, "6") == 0)
     { // Create
-    	_Bool clientOK = 0;
-    	DIR *cr = opendir("./Projects");      // Open directory for client projects
-    
-    	char *clientPath = (char *)malloc((strlen(repo) + 12) * sizeof(char)); // Create path on client side for new repo
-		if (clientPath == NULL)
-		{
-		    fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
-		    exit(EXIT_FAILURE);
-    	}
-    	
-    	strcpy(clientPath, "./Projects/"); // Setup path for client
-		strcat(clientPath, repo);
-		strcat(clientPath, "\0");
-		
-		if (cr == NULL)
-		{ // Check to see if the directory Projects exists
-		    if (mkdir("Projects", S_IRWXU | S_IRWXG | S_IRWXO) == -1)
-		    { // grant all rights to everyone (mode 0777 = rwxrwxrwx).
-		        fprintf(stderr, "%sError%s: Projects folder could not be created.\n", RED, RESET);
-		        send(server.socket_fd, "E", 1, 0); // Send error to server
-		        exit(EXIT_FAILURE);
-		    }
-		    else
-		    {
-		        printf("Projects folder has been created.\n");
-		    }
-		}
-		else
-		{
-		    closedir(cr);
-		}
+        _Bool clientOK = 0;
+        DIR *cr = opendir("./Projects"); // Open directory for client projects
 
-		if (mkdir(clientPath, S_IRWXU | S_IRWXG | S_IRWXO) == -1) // grant all rights to everyone (mode 0777 = rwxrwxrwx).
-		{
-		    fprintf(stderr, "%sError%s: %s folder already exists locally.\n", RED, RESET, repo);
-		    send(server.socket_fd, "E", 1, 0);
-		}
-		else
-		{
-		    printf("%s folder has been successfully created locally.\n", repo);
-		    clientOK = 1;
-		    send(server.socket_fd, "O", 1, 0); // Send OK to server
-		}
-    	
-		    recv(server.socket_fd, commandResponse, sizeof(commandResponse), 0);
-		    printf("%s%s%s", YELLOW, commandResponse, RESET);
-		    
-		if(clientOK == 1 && commandResponse[0] == 'P'){
-		    outputFiles(receiveFiles(server.socket_fd), repo, 1); // 1 indicates that the client is receiving
+        char *clientPath = (char *)malloc((strlen(repo) + 12) * sizeof(char)); // Create path on client side for new repo
+        if (clientPath == NULL)
+        {
+            fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
+            exit(EXIT_FAILURE);
         }
-        else{
-        	recv(server.socket_fd, commandResponse, sizeof(commandResponse), 0);
-        	remove(clientPath);
+
+        strcpy(clientPath, "./Projects/"); // Setup path for client
+        strcat(clientPath, repo);
+        strcat(clientPath, "\0");
+
+        if (cr == NULL)
+        { // Check to see if the directory Projects exists
+            if (mkdir("Projects", S_IRWXU | S_IRWXG | S_IRWXO) == -1)
+            { // grant all rights to everyone (mode 0777 = rwxrwxrwx).
+                fprintf(stderr, "%sError%s: Projects folder could not be created.\n", RED, RESET);
+                send(server.socket_fd, "E", 1, 0); // Send error to server
+                exit(EXIT_FAILURE);
+            }
+            else
+            {
+                printf("Projects folder has been created.\n");
+            }
+        }
+        else
+        {
+            closedir(cr);
+        }
+
+        if (mkdir(clientPath, S_IRWXU | S_IRWXG | S_IRWXO) == -1) // grant all rights to everyone (mode 0777 = rwxrwxrwx).
+        {
+            fprintf(stderr, "%sError%s: %s folder already exists locally.\n", RED, RESET, repo);
+            send(server.socket_fd, "E", 1, 0);
+        }
+        else
+        {
+            printf("%s folder has been successfully created locally.\n", repo);
+            clientOK = 1;
+            send(server.socket_fd, "O", 1, 0); // Send OK to server
+        }
+
+        recv(server.socket_fd, commandResponse, sizeof(commandResponse), 0);
+        printf("%s%s%s", YELLOW, commandResponse, RESET);
+
+        if (clientOK == 1 && commandResponse[0] == 'P')
+        {
+            outputFiles(receiveFiles(server.socket_fd), repo, 1); // 1 indicates that the client is receiving
+        }
+        else
+        {
+            recv(server.socket_fd, commandResponse, sizeof(commandResponse), 0);
+            remove(clientPath);
         }
     }
     else if (strcmp(command, "7") == 0)
@@ -399,8 +402,8 @@ void sendArgument(char *argument, char *command, char *repo, char *argv[])
         }
     }
     else if (strcmp(command, "11") == 0)
-    { // History
-    	outputFiles(receiveFiles(server.socket_fd), repo, 1); // 1 indicates that the client is receiving
+    {                                                         // History
+        outputFiles(receiveFiles(server.socket_fd), repo, 1); // 1 indicates that the client is receiving
     }
     else if (strcmp(command, "12") == 0)
     { // Rollback
@@ -417,7 +420,7 @@ void sendArgument(char *argument, char *command, char *repo, char *argv[])
     return;
 }
 
-void update(char *argument, char *command, char *repo, int fd)
+void update(char *repo, int fd)
 {
     int length = 9 + strlen(repo) + 11; // Projects/ + <project_name> + /.manifest\0
     char client_manifest_path[length];
@@ -512,12 +515,6 @@ void update(char *argument, char *command, char *repo, int fd)
     }
 
     outer_cursor = client_manifest->nextNode; // setup for loop
-
-    if (numberOfFilesInClient == 0)
-    {
-        fprintf(stderr, "%sWarning%s: Client .manifest is empty.\n", RED, RESET);
-        return;
-    }
 
     // ====================================================================================================
 
@@ -696,7 +693,21 @@ void update(char *argument, char *command, char *repo, int fd)
 
     // ====================================================================================================
 
-    if (C > 0) //  If conflicts are found, the client program should not write a .Update.
+    int path_length = 9 + strlen(repo) + 9;
+    char path[path_length];
+    memset(path, '\0', path_length);
+
+    strcpy(path, "Projects/");
+    strcat(path, repo);
+    strcat(path, "/.Update");
+
+    if ((wd = open(path, O_RDONLY)) != -1) // remove old .Update if one exists.
+    {
+        close(wd);
+        remove(path);
+    }
+
+    if (C > 0) //  If conflicts are found, the client should not write a .Update.
     {
         int i = 0;
         while (i < C)
@@ -705,14 +716,6 @@ void update(char *argument, char *command, char *repo, int fd)
         }
         return;
     }
-
-    int path_length = 9 + strlen(repo) + 9;
-    char path[path_length];
-    memset(path, '\0', path_length);
-
-    strcpy(path, "Projects/");
-    strcat(path, repo);
-    strcat(path, "/.Update");
 
     wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU); // create .Update.
 
@@ -801,11 +804,8 @@ void update(char *argument, char *command, char *repo, int fd)
         }
     }
     write(wd, "\n", 1); // Ends the last line with a new line (leaves empty line at the end of the file which is helpful for tokenizing)
-	
     close(wd);
-    
     updateHistory(path, repo, fd);
-    
     return;
 }
 
@@ -875,4 +875,43 @@ char *fileLiveHash(char *path)
     strcpy(hash_string, temp_buffer); // Copy the converted hash into a char*
 
     return hash_string;
+}
+
+void upgrade(char *repo, int fd)
+{
+    int length = 9 + strlen(repo) + 2; // Projects/ + <project_name> + / + \0
+    char project_path[length];
+    memset(project_path, '\0', length);
+
+    strcpy(project_path, "Projects/");
+    strcat(project_path, repo);
+    strcat(project_path, "/");
+
+    int manifest_length = length + 9;
+    char manifest_path[manifest_length];
+    memset(manifest_path, '\0', manifest_length);
+
+    strcpy(manifest_path, project_path);
+    strcat(manifest_path, ".manifest");
+
+    struct project_manifest *client_manifest = fetchManifest(manifest_path);
+
+    if (client_manifest == NULL) // project name doesn't exist on server.
+    {
+        fprintf(stderr, "%sError%s: Unable to grab the current version of .manifest.\n", RED, RESET);
+        return;
+    }
+
+    int update_length = length + 7;
+    char update_path[manifest_length];
+    memset(update_path, '\0', update_length);
+
+    strcpy(update_path, project_path);
+    strcat(update_path, ".Update");
+
+    if ((open(update_path, O_RDONLY)) == -1)
+    {
+        fprintf(stderr, "Error: .Update doesn't exist.\n");
+        return;
+    }
 }

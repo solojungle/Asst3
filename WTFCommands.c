@@ -190,7 +190,7 @@ void manageManifest(char *repo, int mode) // 0 is server, 1 is client
     strcat(dirPath, "\0");
     strcat(manifest_path, ".manifest");
     strcat(manifest_path, "\0");
-    
+
     printf("dirPath: %s\n", dirPath);
     printf("manifest_path: %s\n", manifest_path);
 
@@ -742,7 +742,7 @@ void checkStatus(char *repo)
                 // DO SOMETHING HERE WITH FILES FOUND
                 if (strcmp(".mutex", status->d_name) == 0)
                 {
-                   // printf("File: %s\n", status->d_name);
+                    // printf("File: %s\n", status->d_name);
                     wait = 1;                // Set wait to true
                     sleep(1);                // Sleep for 1 second
                     closedir(dd);            // Close repo to start again
@@ -835,62 +835,64 @@ void create(char *repo, int fd)
         fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
         return;
     }
-    
+
     recv(fd, responseBuffer, 1, 0);
-    
-    if(responseBuffer[0] == 'O'){
-    	clientOK = 1;
-    	
-		strcpy(serverPath, "./.server_repos/"); // Setup path for server
-		strcat(serverPath, repo);
-		strcat(serverPath, "\0");
 
-		files = malloc((strlen(serverPath) + 11) * sizeof(char));
-		if (files == NULL)
-		{
-		    fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
-		    return;
-		}
-		files[0] = malloc((strlen(serverPath) + 11) * sizeof(char)); // Setup the path to the server manifest to send send to client
-		strcpy(files[0], serverPath);
-		strcat(files[0], "/.manifest\0");
+    if (responseBuffer[0] == 'O')
+    {
+        clientOK = 1;
 
-		if (sr == NULL)
-		{ // Check to see if the directory .server_repos exists
-		    if (mkdir(".server_repos", S_IRWXU | S_IRWXG | S_IRWXO) == -1)
-		    { // grant all rights to everyone (mode 0777 = rwxrwxrwx).
-		        fprintf(stderr, "%sError%s: .server_repos folder could not be created..\n", RED, RESET);
-		        return;
-		    }
-		    else
-		        printf(".server_repos directory has been created.\n");
-		}
-		else
-		    closedir(sr);
+        strcpy(serverPath, "./.server_repos/"); // Setup path for server
+        strcat(serverPath, repo);
+        strcat(serverPath, "\0");
 
-		checkStatus("./.server_repos"); // If repo is occupied, will make function wait until it is free to use
-		createMutex("./.server_repos"); // Lock down repository so no one can modify it
+        files = malloc((strlen(serverPath) + 11) * sizeof(char));
+        if (files == NULL)
+        {
+            fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
+            return;
+        }
+        files[0] = malloc((strlen(serverPath) + 11) * sizeof(char)); // Setup the path to the server manifest to send send to client
+        strcpy(files[0], serverPath);
+        strcat(files[0], "/.manifest\0");
 
-		if (mkdir(serverPath, S_IRWXU | S_IRWXG | S_IRWXO) == -1) // grant all rights to everyone (mode 0777 = rwxrwxrwx).
-		{
-		    fprintf(stderr, "%sError%s: %s folder already exists.\n", RED, RESET, repo);
-		    send(fd, "Warning: The project already exists on the server!\n", 51, 0);
-		    removeMutex("./.server_repos"); // Remove mutex
-		    return;
-		}
-		else
-		{
-		    printf("%s folder has been created on server.\n", repo);
-		    manageManifest(repo, 0); // Creates the default manifest for the new server repo
-		    serverOK = 1;
-		}
+        if (sr == NULL)
+        { // Check to see if the directory .server_repos exists
+            if (mkdir(".server_repos", S_IRWXU | S_IRWXG | S_IRWXO) == -1)
+            { // grant all rights to everyone (mode 0777 = rwxrwxrwx).
+                fprintf(stderr, "%sError%s: .server_repos folder could not be created..\n", RED, RESET);
+                return;
+            }
+            else
+                printf(".server_repos directory has been created.\n");
+        }
+        else
+            closedir(sr);
 
-		removeMutex("./.server_repos"); // Remove mutex
+        checkStatus("./.server_repos"); // If repo is occupied, will make function wait until it is free to use
+        createMutex("./.server_repos"); // Lock down repository so no one can modify it
 
-		if (clientOK == 1 && serverOK == 1){
-			send(fd, "Preparing to recieve files...\n", 30, 0);
-		    sendFiles(createFileList(files, 1), fd); // SENDING MANIFEST FILE FROM SERVER TO CLIENT THROUGH THE CLIENT'S FD
-		}
+        if (mkdir(serverPath, S_IRWXU | S_IRWXG | S_IRWXO) == -1) // grant all rights to everyone (mode 0777 = rwxrwxrwx).
+        {
+            fprintf(stderr, "%sError%s: %s folder already exists.\n", RED, RESET, repo);
+            send(fd, "Warning: The project already exists on the server!\n", 51, 0);
+            removeMutex("./.server_repos"); // Remove mutex
+            return;
+        }
+        else
+        {
+            printf("%s folder has been created on server.\n", repo);
+            manageManifest(repo, 0); // Creates the default manifest for the new server repo
+            serverOK = 1;
+        }
+
+        removeMutex("./.server_repos"); // Remove mutex
+
+        if (clientOK == 1 && serverOK == 1)
+        {
+            send(fd, "Preparing to recieve files...\n", 30, 0);
+            sendFiles(createFileList(files, 1), fd); // SENDING MANIFEST FILE FROM SERVER TO CLIENT THROUGH THE CLIENT'S FD
+        }
     }
 }
 
@@ -1068,138 +1070,162 @@ void sendManifest(char *repo, int fd)
     return;
 }
 
-void add(char *repo, char *file){
-	char *repoPath = (char*)malloc((strlen(repo) + 12) * sizeof(char));
-	char *filePath = (char*)malloc((strlen(repo) + strlen(file) + 13) * sizeof(char));
-	
-	if(repoPath == NULL || filePath == NULL){
-		fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
-		exit(EXIT_FAILURE);
-	}
-	
-	strcpy(repoPath, "./Projects/"); // Setup path to repository
-	strcat(repoPath, repo);
-	strcat(repoPath, "\0");
-	strcpy(filePath, repoPath); // Setup path to file
-	strcat(filePath, "/");
-	strcat(filePath, file);
-	strcat(filePath, "\0");
-	
-	DIR *rd = opendir(repoPath);
+void add(char *repo, char *file)
+{
+    char *repoPath = (char *)malloc((strlen(repo) + 12) * sizeof(char));
+    char *filePath = (char *)malloc((strlen(repo) + strlen(file) + 13) * sizeof(char));
 
-	if(rd == NULL){ // Check to see if the repo exists
-		fprintf(stderr, "%sError:%s Projects/ folder not found!\n", RED, RESET);
-		exit(EXIT_FAILURE);
-	}
-	closedir(rd);
-	
-	int fd = open(filePath, O_RDONLY);
-	if(fd == -1){ // Check to see if the file exists
-		fprintf(stderr, "%sError:%s %s file does not exist!\n", RED, RESET, file);
-		printf("%sPlease add %s to the Projects/ folder before adding entry to .manifest%s\n", YELLOW, file, RESET);
-		exit(EXIT_FAILURE);
-	}
-	close(fd);
-	
-	manageManifest(repo, 1); // Create manifest entry
-	printf("%s file %sadded%s as an entry to .manifest\n", file, GREEN, RESET);
+    if (repoPath == NULL || filePath == NULL)
+    {
+        fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    strcpy(repoPath, "./Projects/"); // Setup path to repository
+    strcat(repoPath, repo);
+    strcat(repoPath, "\0");
+    strcpy(filePath, repoPath); // Setup path to file
+    strcat(filePath, "/");
+    strcat(filePath, file);
+    strcat(filePath, "\0");
+
+    DIR *rd = opendir(repoPath);
+
+    if (rd == NULL)
+    { // Check to see if the repo exists
+        fprintf(stderr, "%sError:%s Projects/ folder not found!\n", RED, RESET);
+        exit(EXIT_FAILURE);
+    }
+    closedir(rd);
+
+    int fd = open(filePath, O_RDONLY);
+    if (fd == -1)
+    { // Check to see if the file exists
+        fprintf(stderr, "%sError:%s %s file does not exist!\n", RED, RESET, file);
+        printf("%sPlease add %s to the Projects/ folder before adding entry to .manifest%s\n", YELLOW, file, RESET);
+        exit(EXIT_FAILURE);
+    }
+    close(fd);
+
+    manageManifest(repo, 1); // Create manifest entry
+    printf("%s file %sadded%s as an entry to .manifest\n", file, GREEN, RESET);
 }
 
-void removeFile(char *repo, char *file){ // For the Remove function
-	char *repoPath = (char*)malloc((strlen(repo) + 12) * sizeof(char));
-	char *filePath = (char*)malloc((strlen(repo) + strlen(file) + 13) * sizeof(char));
-	
-	if(repoPath == NULL || filePath == NULL){
-		fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
-		exit(EXIT_FAILURE);
-	}
-	
-	strcpy(repoPath, "./Projects/"); // Setup path to repository
-	strcat(repoPath, repo);
-	strcat(repoPath, "\0");
-	strcpy(filePath, repoPath); // Setup path to file
-	strcat(filePath, "/");
-	strcat(filePath, file);
-	strcat(filePath, "\0");
-	
-	DIR *rd = opendir(repoPath);
+void removeFile(char *repo, char *file)
+{ // For the Remove function
+    char *repoPath = (char *)malloc((strlen(repo) + 12) * sizeof(char));
+    char *filePath = (char *)malloc((strlen(repo) + strlen(file) + 13) * sizeof(char));
 
-	if(rd == NULL){ // Check to see if the repo exists
-		fprintf(stderr, "%sError:%s Projects/ folder not found!\n", RED, RESET);
-		exit(EXIT_FAILURE);
-	}
-	closedir(rd);
-	
-	int fd = open(filePath, O_RDONLY);
-	if(fd == -1){ // Check to see if the file exists
-		fprintf(stderr, "%sError:%s %s file does not exist in Projects/ folder!\n", RED, RESET, file);
-		printf("%sPlease make sure %s is in the Projects/ folder before removing entry to .manifest%s\n", YELLOW, file, RESET);
-		exit(EXIT_FAILURE);
-	}
-	close(fd);
-	
-	remove(filePath); // Remove file from repo
-	manageManifest(repo, 1); // Create manifest entry
-	printf("%s file entry %sremoved%s from .manifest and %s\n", file, GREEN, RESET, repoPath);
+    if (repoPath == NULL || filePath == NULL)
+    {
+        fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
+        exit(EXIT_FAILURE);
+    }
+
+    strcpy(repoPath, "./Projects/"); // Setup path to repository
+    strcat(repoPath, repo);
+    strcat(repoPath, "\0");
+    strcpy(filePath, repoPath); // Setup path to file
+    strcat(filePath, "/");
+    strcat(filePath, file);
+    strcat(filePath, "\0");
+
+    DIR *rd = opendir(repoPath);
+
+    if (rd == NULL)
+    { // Check to see if the repo exists
+        fprintf(stderr, "%sError:%s Projects/ folder not found!\n", RED, RESET);
+        exit(EXIT_FAILURE);
+    }
+    closedir(rd);
+
+    int fd = open(filePath, O_RDONLY);
+    if (fd == -1)
+    { // Check to see if the file exists
+        fprintf(stderr, "%sError:%s %s file does not exist in Projects/ folder!\n", RED, RESET, file);
+        printf("%sPlease make sure %s is in the Projects/ folder before removing entry to .manifest%s\n", YELLOW, file, RESET);
+        exit(EXIT_FAILURE);
+    }
+    close(fd);
+
+    remove(filePath);        // Remove file from repo
+    manageManifest(repo, 1); // Create manifest entry
+    printf("%s file entry %sremoved%s from .manifest and %s\n", file, GREEN, RESET, repoPath);
 }
 
-void updateHistory(char *updatePath, char *repo, int fd){
-	int rd = open(updatePath, O_RDONLY);
-	int updateLength = 0;
-	char **files;
-	
-	char *historyPath = (char*)malloc((strlen(repo) + 21) * sizeof(char));
-	strcpy(historyPath, "./Projects/");
-	strcat(historyPath, repo);
-	strcat(historyPath, "/.history");
-	strcat(historyPath, "\0");
-	
-	updateLength = lseek(rd, 0, SEEK_END);
-	lseek(rd, 0, SEEK_SET); // reset file offset
-	char updateBuffer[updateLength];
-	
-	read(rd, updateBuffer, updateLength);
-	
-	int wd = open(historyPath, O_CREAT | O_WRONLY | O_APPEND, S_IRWXU);
-	
-	write(wd, updateBuffer, updateLength);
-	write(wd, "--------------------\n", 21);
-	
-	files[0] = historyPath;
-	
-	send(fd, repo, strlen(repo), 0);
-	sendFiles(createFileList(files, 1), fd);
-	
-	remove(historyPath);
+void updateHistory(char *updatePath, char *repo, int fd)
+{
+    int rd = open(updatePath, O_RDONLY);
+    int updateLength = 0;
+    char **files;
+
+    char *historyPath = (char *)malloc((strlen(repo) + 21) * sizeof(char));
+    strcpy(historyPath, "./Projects/");
+    strcat(historyPath, repo);
+    strcat(historyPath, "/.history");
+    strcat(historyPath, "\0");
+
+    updateLength = lseek(rd, 0, SEEK_END);
+    lseek(rd, 0, SEEK_SET); // reset file offset
+    char updateBuffer[updateLength];
+
+    read(rd, updateBuffer, updateLength);
+
+    int wd = open(historyPath, O_CREAT | O_WRONLY | O_APPEND, S_IRWXU);
+
+    write(wd, updateBuffer, updateLength);
+    write(wd, "--------------------\n", 21);
+
+    files[0] = historyPath;
+
+    send(fd, repo, strlen(repo), 0);
+    sendFiles(createFileList(files, 1), fd);
+
+    remove(historyPath);
 }
 
-void history(char *repo, int fd){
-	char **files;
-	
-	char *historyPath = (char*)malloc((strlen(repo) + 26) * sizeof(char));
-	strcpy(historyPath, "./.server_repos/");
-	strcat(historyPath, repo);
-	strcat(historyPath, "/.history");
-	strcat(historyPath, "\0");
-	
-	files[0] = historyPath;
+void history(char *repo, int fd)
+{
+    char **files;
 
-	sendFiles(createFileList(files, 1), fd);
-	
-	free(historyPath);
+    char *historyPath = (char *)malloc((strlen(repo) + 26) * sizeof(char));
+    strcpy(historyPath, "./.server_repos/");
+    strcat(historyPath, repo);
+    strcat(historyPath, "/.history");
+    strcat(historyPath, "\0");
+
+    files[0] = historyPath;
+
+    sendFiles(createFileList(files, 1), fd);
+
+    free(historyPath);
 }
 
+void sendUpgradeFiles(char *repo, int fd)
+{
+    int length = 14 + strlen(repo) + 2; // .server_repos/ + <project_name> + / + \0
+    char project_path[length];
+    memset(project_path, '\0', length);
 
+    strcpy(project_path, ".server_repos/");
+    strcat(project_path, repo);
+    strcat(project_path, "/");
 
+    int manifest_length = length + 9;
+    char manifest_path[manifest_length];
+    memset(manifest_path, '\0', manifest_length);
 
+    strcpy(manifest_path, project_path);
+    strcat(manifest_path, ".manifest");
 
+    if (fetchManifest(manifest_path) == NULL) // project doesn't exist on server
+    {
+        printf("Error: fetchManifest failed\n");
+        // send(fd, "Error.\n", 7, 0);
+        return;
+    }
 
+    // wait for files to send
 
-
-
-
-
-
-
-
-
+    return;
+}
