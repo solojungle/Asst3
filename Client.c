@@ -308,10 +308,60 @@ void sendArgument(char *argument, char *command, char *repo, char *argv[])
     }
     else if (strcmp(command, "6") == 0)
     { // Create
-        recv(server.socket_fd, commandResponse, sizeof(commandResponse), 0);
-        printf("%s%s%s", YELLOW, commandResponse, RESET);
-        memset(response_buff, '\0', sizeof(response_buff));
-        outputFiles(receiveFiles(server.socket_fd), repo, 1); // 1 indicates that the client is receiving
+    	_Bool clientOK = 0;
+    	DIR *cr = opendir("./Projects");      // Open directory for client projects
+    
+    	char *clientPath = (char *)malloc((strlen(repo) + 12) * sizeof(char)); // Create path on client side for new repo
+		if (clientPath == NULL)
+		{
+		    fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
+		    exit(EXIT_FAILURE);
+    	}
+    	
+    	strcpy(clientPath, "./Projects/"); // Setup path for client
+		strcat(clientPath, repo);
+		strcat(clientPath, "\0");
+		
+		if (cr == NULL)
+		{ // Check to see if the directory Projects exists
+		    if (mkdir("Projects", S_IRWXU | S_IRWXG | S_IRWXO) == -1)
+		    { // grant all rights to everyone (mode 0777 = rwxrwxrwx).
+		        fprintf(stderr, "%sError%s: Projects folder could not be created.\n", RED, RESET);
+		        send(server.socket_fd, "E", 1, 0); // Send error to server
+		        exit(EXIT_FAILURE);
+		    }
+		    else
+		    {
+		        printf("Projects folder has been created.\n");
+		    }
+		}
+		else
+		{
+		    closedir(cr);
+		}
+
+		if (mkdir(clientPath, S_IRWXU | S_IRWXG | S_IRWXO) == -1) // grant all rights to everyone (mode 0777 = rwxrwxrwx).
+		{
+		    fprintf(stderr, "%sError%s: %s folder already exists locally.\n", RED, RESET, repo);
+		    send(server.socket_fd, "E", 1, 0);
+		}
+		else
+		{
+		    printf("%s folder has been successfully created locally.\n", repo);
+		    clientOK = 1;
+		    send(server.socket_fd, "O", 1, 0); // Send OK to server
+		}
+    	
+		    recv(server.socket_fd, commandResponse, sizeof(commandResponse), 0);
+		    printf("%s%s%s", YELLOW, commandResponse, RESET);
+		    
+		if(clientOK == 1 && commandResponse[0] == 'P'){
+		    outputFiles(receiveFiles(server.socket_fd), repo, 1); // 1 indicates that the client is receiving
+        }
+        else{
+        	recv(server.socket_fd, commandResponse, sizeof(commandResponse), 0);
+        	remove(clientPath);
+        }
     }
     else if (strcmp(command, "7") == 0)
     { // Destroy

@@ -250,6 +250,10 @@ Status Update - Dennis Kager - 5/05/19 @ 6:10PM
 * Added removeFile() for the remove command to take an entry out of the manifest
 * Attempting to localize create() so that it is relative to the client side
 
+Status Update - Dennis Kager - 5/05/19 @ 9:31PM
+------------------------------------------------
+* Redesigned create() to work relative to the client, allowing the client and server to be able to run in independent locations
+
 Status Update - Ali Awari - 5/6/19 @ 12:30AM
 ------------------------------------------------
 * Added fileLiveHash().
