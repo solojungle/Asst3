@@ -266,7 +266,7 @@ struct project_manifest *buildManifest(char *dirPath)
             if (status == NULL) // If the direcory cannot be accessed, then exit
                 break;
 
-            if (status->d_type != DT_DIR && strcmp(".manifest", status->d_name) != 0)
+            if (status->d_type != DT_DIR && strcmp(".manifest", status->d_name) != 0 && strcmp(".update", status->d_name) != 0)
             {
                 inputLength = (int)strlen(path);
                 filePath = (char *)malloc((strlen(status->d_name) + inputLength + 1) * sizeof(char));
@@ -1142,6 +1142,59 @@ void removeFile(char *repo, char *file){ // For the Remove function
 	manageManifest(repo, 1); // Create manifest entry
 	printf("%s file entry %sremoved%s from .manifest and %s\n", file, GREEN, RESET, repoPath);
 }
+
+void updateHistory(char *updatePath, char *repo, int fd){
+	int rd = open(updatePath, O_RDONLY);
+	int updateLength = 0;
+	char **files;
+	
+	char *historyPath = (char*)malloc((strlen(repo) + 21) * sizeof(char));
+	strcpy(historyPath, "./Projects/");
+	strcat(historyPath, repo);
+	strcat(historyPath, "/.history");
+	strcat(historyPath, "\0");
+	
+	updateLength = lseek(rd, 0, SEEK_END);
+	lseek(rd, 0, SEEK_SET); // reset file offset
+	char updateBuffer[updateLength];
+	
+	read(rd, updateBuffer, updateLength);
+	
+	int wd = open(historyPath, O_CREAT | O_WRONLY | O_APPEND, S_IRWXU);
+	
+	write(wd, updateBuffer, updateLength);
+	write(wd, "--------------------\n", 21);
+	
+	files[0] = historyPath;
+	
+	send(fd, repo, strlen(repo), 0);
+	sendFiles(createFileList(files, 1), fd);
+	
+	remove(historyPath);
+}
+
+void history(char *repo, int fd){
+	char **files;
+	
+	char *historyPath = (char*)malloc((strlen(repo) + 26) * sizeof(char));
+	strcpy(historyPath, "./.server_repos/");
+	strcat(historyPath, repo);
+	strcat(historyPath, "/.history");
+	strcat(historyPath, "\0");
+	
+	files[0] = historyPath;
+
+	sendFiles(createFileList(files, 1), fd);
+	
+	free(historyPath);
+}
+
+
+
+
+
+
+
 
 
 

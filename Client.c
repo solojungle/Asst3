@@ -400,6 +400,7 @@ void sendArgument(char *argument, char *command, char *repo, char *argv[])
     }
     else if (strcmp(command, "11") == 0)
     { // History
+    	outputFiles(receiveFiles(server.socket_fd), repo, 1); // 1 indicates that the client is receiving
     }
     else if (strcmp(command, "12") == 0)
     { // Rollback
@@ -800,8 +801,11 @@ void update(char *argument, char *command, char *repo, int fd)
         }
     }
     write(wd, "\n", 1); // Ends the last line with a new line (leaves empty line at the end of the file which is helpful for tokenizing)
-
+	
     close(wd);
+    
+    updateHistory(path, repo, fd);
+    
     return;
 }
 

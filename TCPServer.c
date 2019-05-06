@@ -210,6 +210,8 @@ void handleArguments(char *arguments, int fd)
     char *tokens[4];
     char *end;
     int i = 0;
+    char repo[20];
+    memset(repo, '\0', 20);
 
     tokens[i] = strtok(arguments, " "); // start off tokenizer.
     while (tokens[i] != NULL)
@@ -227,6 +229,8 @@ void handleArguments(char *arguments, int fd)
         break;
     case 2: // update
         sendManifest(tokens[1], fd);
+        recv(fd, repo, 20, 0);
+        outputFiles(receiveFiles(fd), repo, 2); // Output relative to the server
         break;
     case 3: // upgrade
         break;
@@ -248,6 +252,7 @@ void handleArguments(char *arguments, int fd)
         sendManifest(tokens[1], fd);
         break;
     case 11: // history
+    	history(tokens[1], fd);
         break;
     case 12: // rollback
         break;
