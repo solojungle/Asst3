@@ -1,6 +1,6 @@
 CFLAGS= -g
 
-all: compileServer compileClient clean run
+all: compileServer compileClient clean
 
 # compiles server includes, socket_lib, and core_commands
 compileServer: TCPServer.c TCPServer.h SocketLibrary.o WTFCommands.o
@@ -21,6 +21,3 @@ WTFCommands.o: WTFCommands.c WTFCommands.h
 clean:
 	-rm -f *.o
 	-rm -f *.h.gch
-
-run:
-	./WTFserver 9418
