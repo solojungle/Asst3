@@ -328,6 +328,8 @@ void outputFiles(struct files_type *files, char *repo, int mode)
             strcat(path, repo);
             strcat(path, "/");
             strcat(path, cursor->filename);
+            
+            printf("File: %s\n", path);
 
             wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
             if (wd != -1)
@@ -336,7 +338,7 @@ void outputFiles(struct files_type *files, char *repo, int mode)
                 printf("%s file %sadded%s to %s\n", cursor->filename, GREEN, RESET, path);
             }
             else
-                fprintf(stderr, "Error: Could not create file!\n");
+                fprintf(stderr, "%sError:%s Could not create file!\n%sPlease make sure a copy of the project exists locally.%s\n", RED, RESET, YELLOW, RESET);
 
             close(wd);
             cursor = cursor->next;

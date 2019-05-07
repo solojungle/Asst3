@@ -264,6 +264,8 @@ void handleArguments(char *arguments, int fd)
     }
 
     printf("%sIssued command: %s%s\n", YELLOW, getCommandName(argument), RESET);
+    
+    return;
 }
 
 //
