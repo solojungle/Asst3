@@ -282,3 +282,7 @@ Status Update - Dennis Kager - 5/06/19 @ 9:47PM
 Status Update - Dennis Kager - 5/06/19 @ 10:21PM
 ------------------------------------------------
 * Uploaded readme.pdf
+
+Status Update - Dennis Kager - 5/06/19 @ 10:35PM
+------------------------------------------------
+* Modified readme.pdf
