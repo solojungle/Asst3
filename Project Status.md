@@ -272,3 +272,9 @@ Status Update - Ali Awari - 5/6/19 @ 6:23PM
 * Added upgrade()
 * Added sendUpgradeFiles()
 * Formatting
+
+Status Update - Dennis Kager - 5/06/19 @ 9:47PM
+------------------------------------------------
+* Fixed updateHistory()
+* Fixed bug with history()
+* Minor cosmetic improvements
