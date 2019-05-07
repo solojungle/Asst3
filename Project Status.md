@@ -278,3 +278,7 @@ Status Update - Dennis Kager - 5/06/19 @ 9:47PM
 * Fixed updateHistory()
 * Fixed bug with history()
 * Minor cosmetic improvements
+
+Status Update - Dennis Kager - 5/06/19 @ 10:21PM
+------------------------------------------------
+* Uploaded readme.pdf
