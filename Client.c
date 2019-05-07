@@ -423,6 +423,12 @@ void sendArgument(char *argument, char *command, char *repo, char *argv[])
 
 void update(char *repo, int fd)
 {
+    if (!existsOnServerRecv(fd))
+    {
+        fprintf(stderr, "Error: Project does not exist on server.\n");
+        return;
+    }
+
     int length = 9 + strlen(repo) + 11; // Projects/ + <project_name> + /.manifest\0
     char client_manifest_path[length];
     memset(client_manifest_path, '\0', length);
@@ -880,6 +886,12 @@ char *fileLiveHash(char *path)
 
 void upgrade(char *repo, int fd)
 {
+    if (!existsOnServerRecv(fd))
+    {
+        fprintf(stderr, "Error: Project does not exist on server.\n");
+        return;
+    }
+
     int project_path_length = 9 + strlen(repo) + 2; // Projects/ + <project_name> + / + \0
     char project_path[project_path_length];
     memset(project_path, '\0', project_path_length);
@@ -895,18 +907,11 @@ void upgrade(char *repo, int fd)
     strcpy(manifest_path, project_path);
     strcat(manifest_path, ".manifest");
 
-    struct project_manifest *client_manifest = fetchManifest(manifest_path);
+    struct project_manifest *client_manifest = fetchManifest(manifest_path); // local manifest
 
-    if (client_manifest == NULL) // project name doesn't exist on server.
+    if (client_manifest == NULL) // project name doesn't exist on client.
     {
         fprintf(stderr, "%sError%s: Unable to grab the client .manifest.\n", RED, RESET);
-        return;
-    }
-
-    struct files_type *server_file = receiveFiles(fd);
-    if (server_file == NULL)
-    {
-        fprintf(stderr, "%sError%s: Unable to grab the server .manifest.\n", RED, RESET);
         return;
     }
 
@@ -1017,4 +1022,179 @@ void upgrade(char *repo, int fd)
     }
 
     return;
+}
+
+void commit(char *repo, int fd)
+{
+    if (!existsOnServerRecv(fd)) //  if the project name doesn’t exist on the server
+    {
+        fprintf(stderr, "Error: Project does not exist on server.\n");
+        return;
+    }
+
+    struct files_type *client_update;
+    if ((client_update = grabClientUpdate(repo)) != NULL) // client has a .Update file that isn't empty (no .Update is fine).
+    {
+        char *token = strtok(client_update->file, " \n");
+        if (token != NULL)
+        {
+            fprintf(stderr, "Error: .Update file is not empty, please run './WTF update <project name>'.\n");
+            return;
+        }
+    }
+
+    struct project_manifest *server_manifest;
+    if ((server_manifest = grabServerManifest(repo, fd)) == NULL) // if cannot grab server .manifest.
+    {
+        fprintf(stderr, "%sError%s: Unable to fetch the server's .Manifest file.\n", RED, RESET);
+        return;
+    }
+
+    struct project_manifest *client_manifest;
+    if ((client_manifest = grabClientManifest(repo)) == NULL) // the client should run through its own .Manifest.
+    {
+        fprintf(stderr, "%sError%s: Unable to fetch the client's .Manifest file.\n", RED, RESET);
+        return;
+    }
+
+    // the client should should first check to make sure that the .Manifest versions match.
+    if (client_manifest->repoVersion != server_manifest->repoVersion)
+    {
+        fprintf(stderr, "%sError%s: .Manifest versions do not match, please UPDATE local project.\n", RED, RESET);
+        return;
+    }
+
+    return;
+}
+
+struct project_manifest *grabClientManifest(char *repo) // wrapper for fetchManifest.
+{
+    int path_length = 9 + strlen(repo) + 10 + 1; // Projects/:9 + <project_name> + /.manifest:10 + \0:1
+    char client_manifest_path[path_length];
+    memset(client_manifest_path, '\0', path_length);
+
+    strcpy(client_manifest_path, "Projects/");
+    strcat(client_manifest_path, repo);
+    strcat(client_manifest_path, "/.manifest");
+
+    struct project_manifest *client_manifest = fetchManifest(client_manifest_path); // is already malloc'd.
+
+    if (client_manifest == NULL)
+    {
+        fprintf(stderr, "%sError%s: Unable to grab the current version of .manifest.\n", RED, RESET);
+        return NULL;
+    }
+
+    return client_manifest;
+}
+
+struct files_type *grabClientUpdate(char *repo)
+{
+
+    int update_path_length = 9 + strlen(repo) + 8 + 1; // Projects/:9 + <project_name> + /.Update:8 + \0:1
+    char update_path[update_path_length];
+    memset(update_path, '\0', update_path_length);
+
+    strcpy(update_path, "Projects/");
+    strcat(update_path, repo);
+    strcat(update_path, "/.Update");
+
+    int fd;
+    if ((fd = open(update_path, O_RDONLY)) != -1)
+    {
+        fprintf(stderr, "Error: .Update file could not be found.\n");
+        return NULL;
+    }
+
+    int file_length;
+    if ((file_length = lseek(fd, 0, SEEK_END)) == -1)
+    {
+        fprintf(stderr, "Error: lseek failed to find end of file.\n");
+        return NULL;
+    }
+
+    lseek(fd, 0, SEEK_SET); // reset file offset
+
+    char file_buffer[file_length + 1];
+    memset(file_buffer, '\0', file_length + 1); // remove garbage chars.
+
+    if (read(fd, file_buffer, file_length) == -1)
+    {
+        fprintf(stderr, "Error: Failed to read .Update file.\n");
+        return NULL;
+    }
+
+    return initializeFileNode(update_path, strlen(update_path), file_buffer, file_length);
+}
+
+struct project_manifest *grabServerManifest(char *repo, int fd)
+{
+    DIR *dir;                                             // in case somehow the folder was left over.
+    if ((dir = opendir(".temporary_conversion")) != NULL) // check to see if folder was left over.
+    {
+        closedir(dir);
+        remove(".temporary_conversion/.manifest");
+        rmdir(".temporary_conversion");
+    }
+
+    struct files_type *server_file = receiveFiles(fd);
+    if (server_file == NULL) // If cannot grab server .manifest.
+    {
+        fprintf(stderr, "%sError%s: Unable to fetch the server's .manifest file.\n", RED, RESET);
+        return NULL;
+    }
+
+    if (mkdir(".temporary_conversion", S_IRWXU | S_IRWXG) == -1)
+    {
+        fprintf(stderr, "%sError%s: Directory 'temporary_conversion' failed to be created.\n", RED, RESET);
+        return NULL;
+    }
+
+    int path_length = 22 + strlen(server_file->filename) + 1; // .temporary_conversion/:22 + <manifest> + \0
+    char path[path_length];
+    memset(path, '\0', path_length);
+
+    strcpy(path, ".temporary_conversion/");
+    strcat(path, server_file->filename);
+
+    int wd;
+    if ((wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, 0644)) == -1)
+    {
+        fprintf(stderr, "%sError%s: Could not open file.\n", RED, RESET);
+        rmdir(".temporary_conversion");
+        return NULL;
+    }
+
+    if (write(wd, server_file->file, server_file->file_length) == -1)
+    {
+        fprintf(stderr, "%sError%s: Could not write file.\n", RED, RESET);
+        remove(path);
+        rmdir(".temporary_conversion");
+        return NULL;
+    }
+
+    close(wd);
+
+    struct project_manifest *server_manifest;
+    if ((server_manifest = fetchManifest(".temporary_conversion/.manifest")) == NULL) // fetch.
+    {
+        fprintf(stderr, "%sError%s: server_manifest is NULL\n", RED, RESET);
+        remove(path);
+        rmdir(".temporary_conversion");
+        return NULL;
+    }
+
+    if (remove(path) != 0) // remove file.
+    {
+        fprintf(stderr, "%sError%s: path failed to be removed.\n", RED, RESET);
+        return NULL;
+    }
+
+    if (rmdir(".temporary_conversion") == -1) // remove dir.
+    {
+        fprintf(stderr, "%sError%s: Directory failed to be deleted.\n", RED, RESET);
+        return NULL;
+    }
+
+    return server_manifest;
 }

@@ -228,13 +228,24 @@ void handleArguments(char *arguments, int fd)
         checkout(tokens[1], fd);
         break;
     case 2: // update
-        sendManifest(tokens[1], fd);
+        if (existsOnServerSend(tokens[1], fd) != -1)
+        {
+            sendManifest(tokens[1], fd);
+        }
         // recv(fd, repo, 20, 0);
         // outputFiles(receiveFiles(fd), repo, 2); // Output relative to the server
         break;
     case 3: // upgrade
+        if (existsOnServerSend(tokens[1], fd) != -1)
+        {
+            sendUpgradeFiles(tokens[1], fd);
+        }
         break;
     case 4: // commit
+        if (existsOnServerSend(tokens[1], fd) != -1)
+        {
+            sendManifest(tokens[1], fd);
+        }
         break;
     case 5: // push
         break;
@@ -264,7 +275,7 @@ void handleArguments(char *arguments, int fd)
     }
 
     printf("%sIssued command: %s%s\n", YELLOW, getCommandName(argument), RESET);
-    
+
     return;
 }
 

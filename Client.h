@@ -15,6 +15,10 @@
 
 // Forward Declarations
 
+struct project_manifest *grabClientManifest(char *);
+struct files_type *grabClientUpdate(char *);
+struct project_manifest *grabServerManifest(char *, int);
+
 void sendArgument(char *, char *, char *, char **);
 void handleArguments(int, char **);
 void update(char *, int);

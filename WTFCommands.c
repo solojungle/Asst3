@@ -1211,35 +1211,16 @@ void history(char *repo, int fd)
 
 void sendUpgradeFiles(char *repo, int fd)
 {
-    int length = 14 + strlen(repo) + 2; // .server_repos/ + <project_name> + / + \0
-    char project_path[length];
-    memset(project_path, '\0', length);
+    // int length = 14 + strlen(repo) + 2; // .server_repos/ + <project_name> + / + \0
+    // char project_path[length];
+    // memset(project_path, '\0', length);
 
-    strcpy(project_path, ".server_repos/");
-    strcat(project_path, repo);
-    strcat(project_path, "/");
+    // strcpy(project_path, ".server_repos/");
+    // strcat(project_path, repo);
+    // strcat(project_path, "/");
 
-    int manifest_length = length + 9;
-    char manifest_path[manifest_length];
-    memset(manifest_path, '\0', manifest_length);
-
-    strcpy(manifest_path, project_path);
-    strcat(manifest_path, ".manifest");
-
-    if ((fetchManifest(manifest_path)) == NULL) // project doesn't exist on server
-    {
-        printf("Error: fetchManifest failed\n");
-        send(fd, "ERR.\n", 5, 0);
-        return;
-    }
-
-    char *files[1];
-    files[0] = manifest_path;
-
-    sendFiles(createFileList(files, 1), fd); // SENDING MANIFEST FILE FROM SERVER TO CLIENT THROUGH THE CLIENT'S FD
-
-    // dangerous code here.
-    struct files_type *update_file = receiveFiles(fd);
+    // does error check even work here?.
+    struct files_type *update_file = receiveFiles(fd); // receive .Update file.
     // if (update_file == NULL)
     // {
     //     fprintf("Error: .Update file is null.\n");
@@ -1290,4 +1271,54 @@ void sendUpgradeFiles(char *repo, int fd)
     sendFiles(createFileList(changed_files, index), fd);
 
     return;
+}
+
+int existsOnServerSend(char *repo, int fd) // server-side function.
+{
+    int path_length = 14 + strlen(repo) + 1; // .server_repos/ + repo + 1
+    char repo_path[path_length];
+    memset(repo_path, '\0', path_length);
+
+    strcpy(repo_path, ".server_repos/"); // Setup path to repository
+    strcat(repo_path, repo);
+
+    DIR *dd = opendir(repo_path);
+    if (dd == NULL) // Check to see if the repo exists
+    {
+        fprintf(stderr, "%sError:%s Projects/ folder not found!\n", RED, RESET);
+        send(fd, "NO.", 4, 0); // does not exist on server.
+        return -1;
+    }
+    else
+    {
+        send(fd, "OK.", 4, 0); // does exist on server.
+    }
+
+    closedir(dd);
+    return 1;
+}
+
+int existsOnServerRecv(int fd) // client-side function.
+{
+    char message[4];
+    memset(message, '\0', 4);
+
+    char *success = "OK.";
+    char *failure = "NO.";
+
+    recv(fd, message, 4, 0);
+
+    if (strcmp(message, success) == 0)
+    {
+        return 1;
+    }
+    else if (strcmp(message, failure) == 0)
+    {
+        return 0;
+    }
+    else
+    {
+        fprintf(stderr, "Error: Message received from existsOnServer was invalid.\n");
+        return 0;
+    }
 }
