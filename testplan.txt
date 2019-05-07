@@ -1,0 +1,36 @@
+//
+//  testplan.txt
+//  WTF
+//
+//  Created by Dennis Kager and Ali Awari on 5/6/19.
+//  Copyright © 2019 Dennis Kager and Ali Awari. All rights reserved.
+//
+
+In general, consider the questions
+- What aren't we testing?
+- What are we testing?
+- How are we testing it?
+
+1) WTFServer
+  
+  Can you have a negative port?
+  - Will automatically go to 65535.
+
+  Can you have letters as a port?
+  - Will automatically go to 0. 
+
+2) WTFClient
+  
+
+  We plan to configure to a server, add files to repo, add them to .manifest.
+Remove files from the repo/.mani and run update, with the .update file run 
+Commit/Push run Upgrade, then run Commit/Push once more.
+
+3) What we're not testing
+
+  
+  Does commit work?
+
+  Does push work?
+
+  Does rollback work?
