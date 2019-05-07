@@ -907,7 +907,7 @@ void upgrade(char *repo, int fd)
     if (server_file == NULL)
     {
         fprintf(stderr, "%sError%s: Unable to grab the server .manifest.\n", RED, RESET);
-        return 0;
+        return;
     }
 
     // ====================================================================================================

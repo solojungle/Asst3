@@ -1150,61 +1150,64 @@ void removeFile(char *repo, char *file)
     printf("%s file entry %sremoved%s from .manifest and %s\n", file, GREEN, RESET, repoPath);
 }
 
-void updateHistory(char *updatePath, char *repo, int fd){
-	int rd = open(updatePath, O_RDONLY);
-	int updateLength = 0;
-	char *files[1];
-	
-	char *historyPath = (char*)malloc((strlen(repo) + 21) * sizeof(char));
-	strcpy(historyPath, "./Projects/");
-	strcat(historyPath, repo);
-	strcat(historyPath, "/.history");
-	strcat(historyPath, "\0");
-	
-	updateLength = lseek(rd, 0, SEEK_END);
-	lseek(rd, 0, SEEK_SET); // reset file offset
-	char updateBuffer[updateLength];
-	
-	read(rd, updateBuffer, updateLength);
-	
-	int wd = open(historyPath, O_CREAT | O_WRONLY | O_APPEND, S_IRWXU);
-	
-	write(wd, updateBuffer, updateLength);
-	write(wd, "--------------------\n", 21);
-	
-	files[0] = historyPath;
-	
-	send(fd, repo, strlen(repo), 0);
-	sendFiles(createFileList(files, 1), fd);
-	
-	close(rd);
-	close(wd);
-	remove(historyPath);
+void updateHistory(char *updatePath, char *repo, int fd)
+{
+    int rd = open(updatePath, O_RDONLY);
+    int updateLength = 0;
+    char *files[1];
+
+    char *historyPath = (char *)malloc((strlen(repo) + 21) * sizeof(char));
+    strcpy(historyPath, "./Projects/");
+    strcat(historyPath, repo);
+    strcat(historyPath, "/.history");
+    strcat(historyPath, "\0");
+
+    updateLength = lseek(rd, 0, SEEK_END);
+    lseek(rd, 0, SEEK_SET); // reset file offset
+    char updateBuffer[updateLength];
+
+    read(rd, updateBuffer, updateLength);
+
+    int wd = open(historyPath, O_CREAT | O_WRONLY | O_APPEND, S_IRWXU);
+
+    write(wd, updateBuffer, updateLength);
+    write(wd, "--------------------\n", 21);
+
+    files[0] = historyPath;
+
+    send(fd, repo, strlen(repo), 0);
+    sendFiles(createFileList(files, 1), fd);
+
+    close(rd);
+    close(wd);
+    remove(historyPath);
 }
 
-void history(char *repo, int fd){
-	char *file[1];
-	
-	char *historyPath = (char*)malloc((strlen(repo) + 26) * sizeof(char));
-	strcpy(historyPath, "./.server_repos/");
-	strcat(historyPath, repo);
-	strcat(historyPath, "/.history\0");
-	
-	int rd = open(historyPath, O_RDONLY);
-	
-	if(rd == -1){
-		send(fd, "Error: Project cannot be found or has no history!\n", 50, 0);
-		return; 
-	}
-	
-	send(fd, "Preparing to receive file...\n", 30, 0);
-	
-	file[0] = historyPath;
+void history(char *repo, int fd)
+{
+    char *file[1];
 
-	sendFiles(createFileList(file, 1), fd);
-	
-	free(historyPath);
-}	
+    char *historyPath = (char *)malloc((strlen(repo) + 26) * sizeof(char));
+    strcpy(historyPath, "./.server_repos/");
+    strcat(historyPath, repo);
+    strcat(historyPath, "/.history\0");
+
+    int rd = open(historyPath, O_RDONLY);
+
+    if (rd == -1)
+    {
+        send(fd, "Error: Project cannot be found or has no history!\n", 50, 0);
+        return;
+    }
+
+    send(fd, "Preparing to receive file...\n", 30, 0);
+
+    file[0] = historyPath;
+
+    sendFiles(createFileList(file, 1), fd);
+
+    free(historyPath);
+}
 
 void sendUpgradeFiles(char *repo, int fd)
 {
@@ -1284,22 +1287,7 @@ void sendUpgradeFiles(char *repo, int fd)
         token = strtok(NULL, " \n");
     }
 
-    sendFiles(changed_files, index);
+    sendFiles(createFileList(changed_files, index), fd);
 
     return;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
