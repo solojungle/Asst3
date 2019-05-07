@@ -51,6 +51,7 @@ struct project_manifest *updateManifest(struct project_manifest *, struct projec
 void outputManifestFile(struct project_manifest *, char *);                                    // Creates a final .manifest file
 char *searchOldManifest(char *, struct project_manifest *);                                    // Searches the old manifest for file matches
 void addEntry(char *, char *);															       // Add an entry to .manifest
+void removeEntry(char *, char *);															   // Remove an entry from .manifest
 void freeManList(struct project_manifest *);                                                   // Frees manifest linked list
 void printManifest(struct project_manifest *);                                                 // For Debugging
 
