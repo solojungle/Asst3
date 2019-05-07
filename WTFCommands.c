@@ -1,5 +1,6 @@
 #include "WTFCommands.h"
 #include "SocketLibrary.h"
+#include "Client.h"		   // Generate Live Hash
 
 /**
  *  makeDirectory()
@@ -620,6 +621,108 @@ char *searchOldManifest(char *file, struct project_manifest *oldMan)
     return NULL; // Returns NULL if the file being searched does not exist in the old manifest
 }
 
+void addEntry(char *filePath, char *repoPath){
+	char *manifestPath = (char*)malloc((strlen(repoPath) + 11) * sizeof(char));
+	strcpy(manifestPath, repoPath);
+	strcat(manifestPath, "/.manifest\0");
+	char *projPath = repoPath;
+	struct project_manifest *oldMan = malloc(sizeof(struct project_manifest *));
+	oldMan = fetchManifest(manifestPath);
+	
+	char *response = searchOldManifest(filePath, oldMan);
+	
+	if(response == NULL){
+		int rd = open(filePath, O_RDONLY);
+		int file_length = lseek(rd, 0, SEEK_END);
+		lseek(rd, 0, SEEK_SET);
+	
+		char file_buffer[file_length + 1];
+		memset(file_buffer, '\0', file_length + 1);
+		read(rd, file_buffer, file_length);
+		file_buffer[file_length + 1] = '\0';
+	
+		close(rd);
+	
+		const char *string = file_buffer;                             // Point to the contents of the buffer with a const char *
+		unsigned char *hash = SHA256(string, strlen(string), 0); // Get the hash of the string (in hexadecimal)
+		char tempString[33];                                     // String that holds converted hash
+		char *hashBuff = malloc(1 * sizeof(char));
+		if (hashBuff == NULL)
+			return;
+
+		int i; // Iterate through the hash
+		for (i = 0; i < SHA256_DIGEST_LENGTH; ++i)
+		{
+			sprintf(hashBuff, "%02x", hash[i]); // Convert each hash character to hexidecimal
+		    tempString[i] = *hashBuff;          // Populate the tempString array with converted hash characters
+		}
+		tempString[i] = '\0'; // End the tempString with a delimiter
+		char *hashString = (char *)malloc(33 * sizeof(char));
+		if (hashString == NULL)
+			return;
+		strcpy(hashString, tempString); // Copy the converted hash into a char*
+		
+		struct project_manifest *cursor = oldMan;
+		
+		while(cursor -> nextNode != NULL){
+			cursor = cursor -> nextNode;
+		}
+		cursor -> nextNode = malloc(sizeof(struct project_manifest *));
+		cursor -> nextNode -> repoVersion = NULL;
+		cursor -> nextNode -> fileVersion = "0";
+		cursor -> nextNode -> file = filePath;
+		cursor -> nextNode -> hash = hashString;
+		cursor -> nextNode -> nextNode = NULL;
+		cursor -> nextNode -> prevNode = cursor;
+
+		outputManifestFile(oldMan, manifestPath);
+		printf("%s %sadded%s as an entry to .manifest\n", filePath, GREEN, RESET);
+	}
+	else
+		printf("%sError:%s The file already exists in the manifest!\n", RED, RESET);
+		
+	freeManList(oldMan);
+}
+
+void removeEntry(char *filePath, char *repoPath){
+	char *manifestPath = (char*)malloc((strlen(repoPath) + 11) * sizeof(char));
+	strcpy(manifestPath, repoPath);
+	strcat(manifestPath, "/.manifest\0");
+	char *projPath = repoPath;
+	struct project_manifest *oldMan = malloc(sizeof(struct project_manifest *));
+	oldMan = fetchManifest(manifestPath);
+	struct project_manifest *cursor = oldMan;
+	_Bool removed = 0;
+	
+	char *response = searchOldManifest(filePath, oldMan);
+
+	if(response != NULL){
+		if(cursor != NULL){
+			cursor = cursor -> nextNode; // Skip over the node containing the repo version
+			while(cursor != NULL){
+				if(strcmp(cursor -> file, filePath) == 0){
+					cursor -> prevNode -> nextNode = cursor -> nextNode; // Eliminate entry in manifest list
+					removed = 1;
+					outputManifestFile(oldMan, manifestPath);
+					break;
+				}
+				cursor = cursor -> nextNode;
+			}
+		}
+		else
+			fprintf(stderr, "%sError:%s The manifest returned NULL!\n", RED, RESET);
+	}
+	else
+		printf("%sError:%s The file does not exist in the manifest!\n", RED, RESET);
+		
+	if(removed == 1){
+		printf("%s entry %sremoved%s from .manifest\n", filePath, GREEN, RESET);
+	}
+	else if(removed == 0){
+		printf("%s %sfailed%s to be removed from .manifest\n", filePath, RED, RESET);
+	}
+}
+
 void outputManifestFile(struct project_manifest *manifest, char *path)
 { // Creates a final .manifest file
     struct project_manifest *cursor = manifest;
@@ -872,7 +975,7 @@ void create(char *repo, int fd)
         if (mkdir(serverPath, S_IRWXU | S_IRWXG | S_IRWXO) == -1) // grant all rights to everyone (mode 0777 = rwxrwxrwx).
         {
             fprintf(stderr, "%sError%s: %s folder already exists.\n", RED, RESET, repo);
-            send(fd, "Warning: The project already exists on the server!\n", 51, 0);
+            send(fd, "Warning: The project already exists on the server! Project removed locally\n", 75, 0);
             removeMutex("./.server_repos"); // Remove mutex
             return;
         }
@@ -1090,7 +1193,7 @@ void add(char *repo, char *file)
 
     if (rd == NULL)
     { // Check to see if the repo exists
-        fprintf(stderr, "%sError:%s Projects/ folder not found!\n", RED, RESET);
+        fprintf(stderr, "%sError:%s %s directory not found!\n", RED, RESET, repoPath);
         exit(EXIT_FAILURE);
     }
     closedir(rd);
@@ -1103,9 +1206,8 @@ void add(char *repo, char *file)
         exit(EXIT_FAILURE);
     }
     close(fd);
-
-    manageManifest(repo, 1); // Create manifest entry
-    printf("%s file %sadded%s as an entry to .manifest\n", file, GREEN, RESET);
+    
+    addEntry(filePath, repoPath);
 }
 
 void removeFile(char *repo, char *file)
@@ -1131,7 +1233,7 @@ void removeFile(char *repo, char *file)
 
     if (rd == NULL)
     { // Check to see if the repo exists
-        fprintf(stderr, "%sError:%s Projects/ folder not found!\n", RED, RESET);
+        fprintf(stderr, "%sError:%s %s directory not found!\n", RED, RESET, repoPath);
         exit(EXIT_FAILURE);
     }
     closedir(rd);
@@ -1144,10 +1246,8 @@ void removeFile(char *repo, char *file)
         exit(EXIT_FAILURE);
     }
     close(fd);
-
-    remove(filePath);        // Remove file from repo
-    manageManifest(repo, 1); // Remove manifest entry
-    printf("%s file entry %sremoved%s from .manifest and %s\n", file, GREEN, RESET, repoPath);
+    
+    removeEntry(filePath, repoPath);
 }
 
 void updateHistory(char *updatePath, char *repo, int fd)

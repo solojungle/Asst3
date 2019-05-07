@@ -295,3 +295,12 @@ Status Update - Dennis Kager - 5/06/19 @ 11:54PM
 ------------------------------------------------
 * Modified makefile
 * Added Asst3.tar.gz
+
+Status Update - Dennis Kager - 5/07/19 @ 5:53PM
+------------------------------------------------
+* Added new function addEntry() which individualizes the addition of files to the manifest
+* Changed some cosmetics and error messages
+
+Status Update - Dennis Kager - 5/07/19 @ 7:13PM
+------------------------------------------------
+* Added new function removeEntry() which individualizes the removal of files from the manifest to keep the log more accurate
