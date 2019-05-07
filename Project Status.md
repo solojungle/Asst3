@@ -290,3 +290,8 @@ Status Update - Dennis Kager - 5/06/19 @ 10:35PM
 Status Update - Ali Awari - 5/6/19 @ 6:23PM
 ------------------------------------------------
 * Finished upgrade()
+
+Status Update - Dennis Kager - 5/06/19 @ 11:54PM
+------------------------------------------------
+* Modified makefile
+* Added Asst3.tar.gz
