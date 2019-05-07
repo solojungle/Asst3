@@ -70,15 +70,7 @@ void handleArguments(int argc, char *argv[])
             fprintf(stderr, "Usage: %s update <project name>\n", argv[0]);
             exit(EXIT_FAILURE);
         }
-        strcpy(string, "2"); // Convert name to number (easier on server end).
-
-        /* char *projectName = (char*)malloc(strlen(argv[2]) * sizeof(char));
-         if(projectName == NULL){
-         fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
-         exit(EXIT_FAILURE);
-         }
-         strcpy(projectName, argv[2]);
-         manageManifest(projectName);*/
+        strcpy(string, "2"); // Convert name to number (easier on server end)
     }
     else if (strcmp(argv[1], "upgrade") == 0)
     {
@@ -88,14 +80,6 @@ void handleArguments(int argc, char *argv[])
             exit(EXIT_FAILURE);
         }
         strcpy(string, "3"); // Convert name to number (easier on server end).
-
-        /* char *projectName = (char*)malloc(strlen(argv[2]) * sizeof(char));
-         if(projectName == NULL){
-         fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
-         exit(EXIT_FAILURE);
-         }
-         strcpy(projectName, argv[2]);
-         manageManifest(projectName);*/
     }
     else if (strcmp(argv[1], "commit") == 0)
     {
@@ -401,8 +385,26 @@ void sendArgument(char *argument, char *command, char *repo, char *argv[])
         }
     }
     else if (strcmp(command, "11") == 0)
-    {                                                         // History
+    { // History
+        recv(server.socket_fd, commandResponse, sizeof(commandResponse), 0);
+        printf("%s%s%s", YELLOW, commandResponse, RESET);
         outputFiles(receiveFiles(server.socket_fd), repo, 1); // 1 indicates that the client is receiving
+
+        char *historyPath = (char *)malloc((strlen(repo) + 21) * sizeof(char));
+        strcpy(historyPath, "./Projects/");
+        strcat(historyPath, repo);
+        strcat(historyPath, "/.history\0");
+
+        char *newPath = (char *)malloc((strlen(repo) + 23) * sizeof(char));
+        strcpy(newPath, "./Projects/");
+        strcat(newPath, repo);
+        strcat(newPath, "_History.txt");
+
+        int a = rename(historyPath, newPath);
+        if (a == 0)
+        {
+            printf(".history file %ssuccessfully%s renamed and moved to %s\n", GREEN, RESET, newPath);
+        }
     }
     else if (strcmp(command, "12") == 0)
     { // Rollback
