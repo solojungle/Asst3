@@ -229,8 +229,8 @@ void handleArguments(char *arguments, int fd)
         break;
     case 2: // update
         sendManifest(tokens[1], fd);
-        recv(fd, repo, 20, 0);
-        outputFiles(receiveFiles(fd), repo, 2); // Output relative to the server
+        // recv(fd, repo, 20, 0);
+        // outputFiles(receiveFiles(fd), repo, 2); // Output relative to the server
         break;
     case 3: // upgrade
         break;
@@ -252,7 +252,7 @@ void handleArguments(char *arguments, int fd)
         sendManifest(tokens[1], fd);
         break;
     case 11: // history
-    	history(tokens[1], fd);
+        history(tokens[1], fd);
         break;
     case 12: // rollback
         break;

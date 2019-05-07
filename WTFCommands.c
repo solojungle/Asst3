@@ -1218,14 +1218,68 @@ void sendUpgradeFiles(char *repo, int fd)
     strcpy(manifest_path, project_path);
     strcat(manifest_path, ".manifest");
 
-    if (fetchManifest(manifest_path) == NULL) // project doesn't exist on server
+    if ((fetchManifest(manifest_path)) == NULL) // project doesn't exist on server
     {
         printf("Error: fetchManifest failed\n");
-        // send(fd, "Error.\n", 7, 0);
+        send(fd, "ERR.\n", 5, 0);
         return;
     }
 
-    // wait for files to send
+    char *files[1];
+    files[0] = manifest_path;
+
+    sendFiles(createFileList(files, 1), fd); // SENDING MANIFEST FILE FROM SERVER TO CLIENT THROUGH THE CLIENT'S FD
+
+    // dangerous code here.
+    struct files_type *update_file = receiveFiles(fd);
+    // if (update_file == NULL)
+    // {
+    //     fprintf("Error: .Update file is null.\n");
+    //     send(fd, "ERR.", 5, 0);
+    //     return;
+    // }
+
+    // ====================================================================================================
+
+    char *token = strtok(update_file->file, " \n");
+    if (token == NULL) // already up to date
+    {
+        printf(".Update is empty, should've been dealt with on client side.\n");
+        return;
+    }
+
+    int index = 0;
+    int totalBytes = 0;
+    char *changed_files[1000]; // arbitrary number.
+    while (token != NULL)
+    {
+        if (strcmp(token, "M") == 0) // rewrite
+        {
+            token = strtok(NULL, " \n"); // file version
+            token = strtok(NULL, " \n"); // filepath
+            changed_files[index] = token;
+            token = strtok(NULL, " \n"); // hash
+            index += 1;
+        }
+        else if (strcmp(token, "A") == 0) // add
+        {
+            token = strtok(NULL, " \n"); // file version
+            token = strtok(NULL, " \n"); // filepath
+            changed_files[index] = token;
+            token = strtok(NULL, " \n"); // hash
+            index += 1;
+        }
+        else
+        {
+            token = strtok(NULL, " \n"); // file version
+            token = strtok(NULL, " \n"); // filepath
+            token = strtok(NULL, " \n"); // hash
+        }
+
+        token = strtok(NULL, " \n");
+    }
+
+    sendFiles(changed_files, index);
 
     return;
 }

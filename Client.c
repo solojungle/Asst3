@@ -195,7 +195,6 @@ void handleArguments(int argc, char *argv[])
     else
     {
         fprintf(stderr, "Command not found\n");
-        manageManifest(argv[2], 1);
         exit(EXIT_FAILURE);
     }
 
@@ -805,7 +804,7 @@ void update(char *repo, int fd)
     }
     write(wd, "\n", 1); // Ends the last line with a new line (leaves empty line at the end of the file which is helpful for tokenizing)
     close(wd);
-    updateHistory(path, repo, fd);
+    // updateHistory(path, repo, fd);
     return;
 }
 
@@ -879,17 +878,17 @@ char *fileLiveHash(char *path)
 
 void upgrade(char *repo, int fd)
 {
-    int length = 9 + strlen(repo) + 2; // Projects/ + <project_name> + / + \0
-    char project_path[length];
-    memset(project_path, '\0', length);
+    int project_path_length = 9 + strlen(repo) + 2; // Projects/ + <project_name> + / + \0
+    char project_path[project_path_length];
+    memset(project_path, '\0', project_path_length);
 
     strcpy(project_path, "Projects/");
     strcat(project_path, repo);
     strcat(project_path, "/");
 
-    int manifest_length = length + 9;
-    char manifest_path[manifest_length];
-    memset(manifest_path, '\0', manifest_length);
+    int manifest_path_length = project_path_length + 9;
+    char manifest_path[manifest_path_length];
+    memset(manifest_path, '\0', manifest_path_length);
 
     strcpy(manifest_path, project_path);
     strcat(manifest_path, ".manifest");
@@ -898,20 +897,122 @@ void upgrade(char *repo, int fd)
 
     if (client_manifest == NULL) // project name doesn't exist on server.
     {
-        fprintf(stderr, "%sError%s: Unable to grab the current version of .manifest.\n", RED, RESET);
+        fprintf(stderr, "%sError%s: Unable to grab the client .manifest.\n", RED, RESET);
         return;
     }
 
-    int update_length = length + 7;
-    char update_path[manifest_length];
-    memset(update_path, '\0', update_length);
-
-    strcpy(update_path, project_path);
-    strcat(update_path, ".Update");
-
-    if ((open(update_path, O_RDONLY)) == -1)
+    struct files_type *server_file = receiveFiles(fd);
+    if (server_file == NULL)
     {
-        fprintf(stderr, "Error: .Update doesn't exist.\n");
+        fprintf(stderr, "%sError%s: Unable to grab the server .manifest.\n", RED, RESET);
+        return 0;
+    }
+
+    // ====================================================================================================
+
+    int upgrade_length = project_path_length + 7;
+    char upgrade_file_path[upgrade_length];
+    memset(upgrade_file_path, '\0', upgrade_length);
+
+    strcpy(upgrade_file_path, project_path);
+    strcat(upgrade_file_path, ".Update");
+
+    int update_fd;
+    if ((update_fd = open(upgrade_file_path, O_RDONLY)) == -1)
+    {
+        fprintf(stderr, "%sPlease run './WTF update <project name>' before running upgrade.%s\n", YELLOW, RESET);
         return;
     }
+
+    int update_contents_length;
+    if ((update_contents_length = lseek(update_fd, 0, SEEK_END)) == -1)
+    {
+        fprintf(stderr, "Error: lseek failed to find end of file.\n");
+        return;
+    }
+
+    lseek(update_fd, 0, SEEK_SET); // reset file offset
+
+    char update_contents[update_contents_length + 1];
+    memset(update_contents, '\0', update_contents_length + 1);
+    read(update_fd, update_contents, update_contents_length);
+    close(update_fd);
+
+    // ====================================================================================================
+
+    char *token = strtok(update_contents, " \n");
+    if (token == NULL)
+    {
+        printf("%sAlready up to date.%s\n", GREEN, RESET);
+        if (remove(upgrade_file_path) == -1)
+        {
+            fprintf(stderr, "Error: Failed to remove the .Update file.\n");
+            return;
+        }
+
+        return;
+    }
+
+    // ====================================================================================================
+
+    char *files[1];
+    files[0] = upgrade_file_path;
+    sendFiles(createFileList(files, 1), fd); // send .Update file to server.
+
+    struct files_type *updated_files = receiveFiles(fd); // get files that need to be changed back.
+
+    while (token != NULL)
+    {
+        if (strcmp(token, "D") == 0) // delete
+        {
+            token = strtok(NULL, " \n"); // file version
+            token = strtok(NULL, " \n"); // filepath
+            removeFile(repo, token);     // remove file (hopefully from .manifest)
+            token = strtok(NULL, " \n"); // hash
+        }
+        else
+        {
+            token = strtok(NULL, " \n"); // file version
+            token = strtok(NULL, " \n"); // filepath
+            token = strtok(NULL, " \n"); // hash
+        }
+
+        token = strtok(NULL, " \n");
+    }
+
+    // ====================================================================================================
+
+    struct files_type *cursor = updated_files;
+    while (cursor != NULL)
+    {
+        char file_path[9 + strlen(repo) + cursor->filename_length + 2];
+        memset(file_path, '\0', 9 + strlen(repo) + cursor->filename_length + 2);
+        strcpy(file_path, "Projects/");
+        strcat(file_path, repo);
+        strcat(file_path, "/");
+        strcat(file_path, cursor->filename);
+
+        int wd;
+        if ((wd = open(file_path, O_CREAT | O_WRONLY | O_TRUNC, 0644)) == -1)
+        {
+            fprintf(stderr, "Error: Upgrade open failed.\n");
+        }
+        else
+        {
+            write(wd, cursor->file, cursor->file_length);
+        }
+
+        close(wd);
+        cursor = cursor->next;
+    }
+
+    // ====================================================================================================
+
+    if (remove(upgrade_file_path) == -1)
+    {
+        fprintf(stderr, "Error: Failed to remove the .Update file.\n");
+        return;
+    }
+
+    return;
 }
