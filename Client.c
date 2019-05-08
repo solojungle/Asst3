@@ -1064,6 +1064,52 @@ void commit(char *repo, int fd)
         return;
     }
 
+    // If the client's commit fails, it should delete its own .Commit
+    int path_length = 9 + strlen(repo) + 8 + 1; // Projects/:9 + <repo> + /.Commit:8 +\0:1
+    char path[path_length];
+    memset(path, '\0', path_length);
+
+    strcpy(path, "Projects/");
+    strcat(path, repo);
+    strcat(path, "/.Client");
+
+    int wd;
+    if ((wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, 0644)) == -1)
+    {
+        fprintf(stderr, "Error: Creating .Commit has failed.\n");
+        return;
+    }
+
+    // run through its own .Manifest and recompute a hashcode for each file listed in it.
+    struct project_manifest *cursor = client_manifest->nextNode;
+    while (cursor != NULL)
+    {
+        char *hash = fileLiveHash(cursor->file);
+        if (strcmp(cursor->hash, hash) != 0)
+        {
+            char *end;
+            long version = strtol(cursor->fileVersion, &end, 10);
+            version += 1;
+
+            char *new_file_version;
+            intToStr(version, new_file_version, 10);
+            write(wd, new_file_version, strlen(new_file_version));
+            write(wd, " ", 1);
+            write(wd, cursor->file, strlen(cursor->file));
+            write(wd, " ", 1);
+            write(wd, hash, strlen(hash));
+            write(wd, "\n", 1);
+        }
+        free(hash);
+
+        cursor = cursor->nextNode;
+    }
+
+    // if the only differences between the server's .Manifest and the client's are
+    //  1. files that are in the server's .Manifest that are not in the client's
+    //  2. files that are in the client's .Manifest that are not in the server's
+    //  3. files that are in both .Manifests, but also have an entry in the client's newly-written .Commit with a higher version number
+
     return;
 }
 
