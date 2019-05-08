@@ -1249,13 +1249,13 @@ struct project_manifest *grabServerManifest(char *repo, int fd)
 }
 
 void push(char *repo, int fd){
-	//char *server_path;
-	char commit_path[strlen(repo) + 20]; 
+    int path_length = 9 + strlen(repo) + 8 + 1;
+	char commit_path[path_length]; // Projects/:9 + <repo> + /.commit:8 + \0:1
+    memset(commit_path, '\0', path_length);
 
-	strcpy(commit_path, "./Projects/");
+	strcpy(commit_path, "Projects/");
 	strcat(commit_path, repo);
-	strcat(commit_path, "/.commit\0");
-
+	strcat(commit_path, "/.commit");
 
 	/*if (!existsOnServerRecv(fd)) //  if the project name doesn't exist on the server
     {
@@ -1263,34 +1263,19 @@ void push(char *repo, int fd){
         return;
     }*/
     
-    int rd = open(commit_path, O_RDONLY);
-    
-    if(rd == -1){
+    int rd;
+    if((rd = open(commit_path, O_RDONLY)) == -1){
     	fprintf(stderr, "Error: .commit file does not exist! please run the commit function.\n");
     	return;
     }
     
     close(rd);
+
     send(fd, repo, strlen(repo), 0);
     
-    printf("path: %s\n", commit_path);
     char *files[1];
     files[0] = commit_path;
-    struct files_type *fileToSend = createFileList(files, 1);
-    
-    
-    printf("File Name: %s\n", fileToSend -> filename);
-    printf("File Name Length: %s\n", fileToSend -> filename_length);
-    printf("File: %s\n", fileToSend -> file);
-    printf("File Length: %s\n", fileToSend -> file_length);
-    
-    
-    printf("path: %s\n", files[0]);
-	sendFiles(fileToSend, fd);
-
-	
-
-
+    sendFiles(createFileList(files, 1), fd);
 }
 
 
