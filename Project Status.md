@@ -313,3 +313,7 @@ Status Update - Ali Awari - 5/7/19 @ 7:58PM
 Status Update - Ali Awari - 5/7/19 @ 9:45PM
 ------------------------------------------------
 * commit() will now create a .Commit file.
+
+Status Update - Dennis Kager - 5/07/19 @ 9:56PM
+------------------------------------------------
+* Started push()
