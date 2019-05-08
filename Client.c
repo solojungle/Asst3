@@ -286,9 +286,11 @@ void sendArgument(char *argument, char *command, char *repo, char *argv[])
     }
     else if (strcmp(command, "4") == 0)
     { // Commit
+    	commit(argv[2], server.socket_fd);
     }
     else if (strcmp(command, "5") == 0)
     { // Push
+    	push(argv[2], server.socket_fd);
     }
     else if (strcmp(command, "6") == 0)
     { // Create
@@ -1244,3 +1246,55 @@ struct project_manifest *grabServerManifest(char *repo, int fd)
 
     return server_manifest;
 }
+
+void push(char *repo, int fd){
+	char **files;
+	//char *server_path;
+	char *commit_path = (char*)malloc((strlen(repo) + 20) * sizeof(char)); 
+	if(commit_path == NULL){
+		fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
+		return;
+	}
+
+	strcpy(commit_path, "./Projects/");
+	strcat(commit_path, repo);
+	strcat(commit_path, "/.commit\0");
+
+
+	/*if (!existsOnServerRecv(fd)) //  if the project name doesn't exist on the server
+    {
+        fprintf(stderr, "Error: Project does not exist on server.\n");
+        return;
+    }*/
+    
+    int rd = open(commit_path, O_RDONLY);
+    
+    if(rd == -1){
+    	fprintf(stderr, "Error: .commit file does not exist! please run the commit function.\n");
+    	return;
+    }
+    
+    close(rd);
+    send(fd, repo, strlen(repo), 0);
+    
+    files[0] = (char *)malloc(strlen(commit_path) * sizeof(char));
+    strcpy(files[0], commit_path);
+    
+    printf("path: %s\n", commit_path);
+	sendFiles(createFileList(files, 1), fd);
+
+	
+
+
+}
+
+
+
+
+
+
+
+
+
+
+

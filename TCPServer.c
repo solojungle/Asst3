@@ -248,6 +248,8 @@ void handleArguments(char *arguments, int fd)
         }
         break;
     case 5: // push
+    	recv(fd, repo, 20, 0);
+    	outputFiles(receiveFiles(server.socket_fd), repo, 2); // Mode 2 indicates that the server is receiving
         break;
     case 6: // create
         create(tokens[1], fd);

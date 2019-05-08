@@ -24,5 +24,7 @@ void handleArguments(int, char **);
 void update(char *, int);
 void upgrade(char *, int);
 char *fileLiveHash(char *);
+void commit(char *, int);
+void push(char *, int);
 
 #endif /* _CLIENT_h */
