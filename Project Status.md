@@ -321,3 +321,4 @@ Status Update - Dennis Kager - 5/07/19 @ 9:56PM
 Status Update - Ali Awari - 5/7/19 @ 9:45PM
 ------------------------------------------------
 * Actually return a non-void type in Socketlib.c findDigit(), decodeString().
+* Finished commit()

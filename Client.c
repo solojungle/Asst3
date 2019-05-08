@@ -1107,8 +1107,35 @@ void commit(char *repo, int fd)
         cursor = cursor->nextNode;
     }
 
-    // struct project_manifest *outer_cursor = client_manifest->nextNode;
-    // struct project_manifest *inner_cursor = server_manifest->nextNode;
+    struct project_manifest *outer_cursor = client_manifest->nextNode; // outer = client
+    struct project_manifest *inner_cursor = server_manifest->nextNode; // inner = server
+
+    while (outer_cursor != NULL)
+    {
+        while (inner_cursor != NULL)
+        {
+            if (strcmp(inner_cursor->file, outer_cursor->file) == 0) // exists in both
+            {
+                char *end;
+                long server = strtol(inner_cursor->fileVersion, &end, 10);
+                long client = strtol(outer_cursor->fileVersion, &end, 10);
+
+                if (client < server || client == server)
+                {
+                    fprintf(stderr, "Error: Client must synch with the repository before committing changes.\n");
+                    remove(path);
+                    return;
+                }
+
+                break;
+            }
+
+            inner_cursor = inner_cursor->nextNode;
+        }
+
+        inner_cursor = server_manifest->nextNode;
+        outer_cursor = outer_cursor->nextNode;
+    }
 
     // if the only differences between the server's .Manifest and the client's are
     //  1. files that are in the server's .Manifest that are not in the client's
