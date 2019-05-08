@@ -248,10 +248,10 @@ void handleArguments(char *arguments, int fd)
         }
         break;
     case 5: // push
-        if (existsOnServerSend(tokens[1], fd) != -1)
+        /*if (existsOnServerSend(tokens[1], fd) != -1)
         {
             outputFiles(receiveFiles(fd), tokens[1], 2); // Mode 2 indicates that the server is receiving
-        }
+        }*/
         break;
     case 6: // create
         create(tokens[1], fd);

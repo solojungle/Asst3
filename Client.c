@@ -290,7 +290,7 @@ void sendArgument(char *argument, char *command, char *repo, char *argv[])
     }
     else if (strcmp(command, "5") == 0)
     { // Push
-        push(argv[2], server.socket_fd);
+        //push(argv[2], server.socket_fd);
     }
     else if (strcmp(command, "6") == 0)
     { // Create
