@@ -1,0 +1,248 @@
+File: Testcases.txt
+Project: Asst3: WTF?
+Dennis Kager
+Ali Awari
+=====================
+Case 1: (Client not configured yet)
+[dlk144@ilab2 Asst3]$ ./WTF create Proj1
+
+Expected Output:
+----------------
+Error: Open has failed to retrieve the config file.
+Error: Server information is NULL.
+
+Achieved Output:
+----------------
+Error: Open has failed to retrieve the config file.
+Error: Server information is NULL.
+====================================================
+Case 2: ./WTF configure 127.0.0.1 9418
+
+Expected Output:
+----------------
+.Wtf directory has been created.
+Objects directory has been created.
+127.0.0.1:9418, has been successfully added to the config file.
+
+Achieved Output:
+----------------
+.Wtf directory has been created.
+Objects directory has been created.
+127.0.0.1:9418, has been successfully added to the config file.
+====================================================
+Case 3: (Trying to create project while server is off to watch the client try to reconnect every
+        three seconds until the server is running)
+./WTF create Proj1
+
+Expected Output:
+----------------
+Socket has been successfully created...
+Attempting connection to 127.0.0.1, port 9418...
+Connection Failed! Trying again...
+
+Connection Failed! Trying again...
+
+Connection to server is successful.
+
+Waiting for server response... OK.
+Proj1 folder has been successfully created locally.
+Preparing to recieve files...
+Receiving files...OK.
+File: ./Projects/Proj1/.manifest
+.manifest file added to ./Projects/Proj1/.manifest
+Disconnected from server.
+
+Achieved Output:
+----------------
+Socket has been successfully created...
+Attempting connection to 127.0.0.1, port 9418...
+Connection Failed! Trying again...
+
+Connection Failed! Trying again...
+
+Connection to server is successful.
+
+Waiting for server response... OK.
+Proj1 folder has been successfully created locally.
+Preparing to recieve files...
+Receiving files...OK.
+File: ./Projects/Proj1/.manifest
+.manifest file added to ./Projects/Proj1/.manifest
+Disconnected from server.
+====================================================
+Case 4: (Creating a project that already exists on client)
+./WTF create Proj1
+
+Expected Output:
+----------------
+Socket has been successfully created...
+Attempting connection to 127.0.0.1, port 9418...
+Connection to server is successful.
+
+Waiting for server response... OK.
+Error: Proj1 folder already exists locally.
+Disconnected from server.
+
+Achieved Output:
+----------------
+Socket has been successfully created...
+Attempting connection to 127.0.0.1, port 9418...
+Connection to server is successful.
+
+Waiting for server response... OK.
+Error: Proj1 folder already exists locally.
+Disconnected from server.
+====================================================
+Case 5: ./WTF checkout Proj1
+
+Expected Output:
+----------------
+Path: ./Projects/Proj1
+Socket has been successfully created...
+Attempting connection to 127.0.0.1, port 9418...
+Connection to server is successful.
+
+Waiting for server response... OK.
+Proj1.tar.gz file added to ./Projects/Proj1.tar.gz
+Decompressing Proj1.tar.gz...
+Proj1/
+Proj1/.manifest
+Decompression successful!
+Proj1.tar.gz removed from ./Projects/Proj1.tar.gz
+Disconnected from server.
+
+Achieved Output:
+----------------
+Path: ./Projects/Proj1
+Socket has been successfully created...
+Attempting connection to 127.0.0.1, port 9418...
+Connection to server is successful.
+
+Waiting for server response... OK.
+Proj1.tar.gz file added to ./Projects/Proj1.tar.gz
+Decompressing Proj1.tar.gz...
+Proj1/
+Proj1/.manifest
+Decompression successful!
+Proj1.tar.gz removed from ./Projects/Proj1.tar.gz
+Disconnected from server.
+====================================================
+Case 6: ./WTF destroy Proj1
+
+Expected Output:
+----------------
+Socket has been successfully created...
+Attempting connection to 127.0.0.1, port 9418...
+Connection to server is successful.
+
+Waiting for server response... OK.
+Project destroyed successfuly! Please remove the project locally
+Disconnected from server.
+
+Achieved Output:
+----------------
+Socket has been successfully created...
+Attempting connection to 127.0.0.1, port 9418...
+Connection to server is successful.
+
+Waiting for server response... OK.
+Project destroyed successfuly! Please remove the project locally
+Disconnected from server.
+====================================================
+Case 7: (Destroying a project that does not exist)
+./WTF destroy Proj1
+
+Expected Output:
+----------------
+Socket has been successfully created...
+Attempting connection to 127.0.0.1, port 9418...
+Connection to server is successful.
+
+Waiting for server response... OK.
+Error: Project does not exist!
+Disconnected from server.
+
+Achieved Output:
+----------------
+Socket has been successfully created...
+Attempting connection to 127.0.0.1, port 9418...
+Connection to server is successful.
+
+Waiting for server response... OK.
+Error: Project does not exist!
+Disconnected from server.
+====================================================
+Case 8: ./WTF add Proj1 main.c
+
+Expected Output:
+----------------
+Socket has been successfully created...
+Attempting connection to 127.0.0.1, port 9418...
+Connection to server is successful.
+
+Waiting for server response... OK.
+main.c file added as an entry to .manifest
+Disconnected from server.
+
+Achieved Output:
+----------------
+Socket has been successfully created...
+Attempting connection to 127.0.0.1, port 9418...
+Connection to server is successful.
+
+Waiting for server response... OK.
+main.c file added as an entry to .manifest
+Disconnected from server.
+====================================================
+Case 9: ./WTF remove Proj1 main.c
+
+Expected Output:
+----------------
+Socket has been successfully created...
+Attempting connection to 127.0.0.1, port 9418...
+Connection to server is successful.
+
+Waiting for server response... OK.
+main.c file entry removed from .manifest and ./Projects/Proj1
+Disconnected from server.
+
+Achieved Output:
+----------------
+Socket has been successfully created...
+Attempting connection to 127.0.0.1, port 9418...
+Connection to server is successful.
+
+Waiting for server response... OK.
+main.c file entry removed from .manifest and ./Projects/Proj1
+Disconnected from server.
+====================================================
+Case 10: (Assuming a .history file exists in server's project directory)
+./WTF history Proj1
+
+Expected Output:
+----------------
+Socket has been successfully created...
+Attempting connection to 127.0.0.1, port 9418...
+Connection to server is successful.
+
+Waiting for server response... OK.
+Preparing to receive file...
+Receiving files...OK.
+File: ./Projects/Proj1/.history
+.history file added to ./Projects/Proj1/.history
+.history file successfully renamed and moved to ./Projects/Proj1_History.txt
+Disconnected from server.
+
+Achieved Output:
+----------------
+Socket has been successfully created...
+Attempting connection to 127.0.0.1, port 9418...
+Connection to server is successful.
+
+Waiting for server response... OK.
+Preparing to receive file...
+Receiving files...OK.
+File: ./Projects/Proj1/.history
+.history file added to ./Projects/Proj1/.history
+.history file successfully renamed and moved to ./Projects/Proj1_History.txt
+Disconnected from server.
