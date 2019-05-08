@@ -328,7 +328,7 @@ void outputFiles(struct files_type *files, char *repo, int mode)
             strcat(path, repo);
             strcat(path, "/");
             strcat(path, cursor->filename);
-            
+
             printf("File: %s\n", path);
 
             wd = open(path, O_CREAT | O_WRONLY | O_TRUNC, S_IRWXU);
@@ -381,14 +381,14 @@ struct files_type *decodeString(int fd)
     if (fd == -1) // check for invalid file descriptor
     {
         fprintf(stderr, "%sError%s: File descriptor is invalid.\n", RED, RESET);
-        return;
+        return NULL;
     }
 
     int numberOfFiles; // number of files
     if ((numberOfFiles = findDigit(fd)) == -1)
     {
         fprintf(stderr, "%sError%s: Couldn't find beginning number in encoded string.\n", RED, RESET);
-        return;
+        return NULL;
     }
 
     struct files_type *root = NULL; // create starting point.
@@ -402,7 +402,7 @@ struct files_type *decodeString(int fd)
         if (recv(fd, filename, filename_length, 0) == -1) // read entire filename.
         {
             fprintf(stderr, "%sError%s: There was an error receiving message from socket.\n", RED, RESET);
-            return;
+            return NULL;
         }
 
         long file_length = findDigit(fd); // find file contents length.
@@ -422,7 +422,7 @@ struct files_type *decodeString(int fd)
         if (recv(fd, temp, cursor->file_length, 0) == -1) // read entire file
         {
             fprintf(stderr, "%sError%s: There was an error receiving message from socket.\n", RED, RESET);
-            return;
+            return NULL;
         }
 
         cursor->file = realloc(cursor->file, cursor->file_length + 1); // realloc to file content size.
@@ -446,7 +446,7 @@ long findDigit(int fd)
     if (fd == -1)
     {
         fprintf(stderr, "%sError%s: File descriptor is invalid.\n", RED, RESET);
-        return;
+        return -1;
     }
 
     char *digit_buffer = malloc(1); // unknown number of digits.
@@ -470,7 +470,7 @@ long findDigit(int fd)
         if (recv(fd, c, 1, 0) == -1) // read string.
         {
             fprintf(stderr, "%sError%s: There was an error receiving message from socket.\n", RED, RESET);
-            return;
+            return -1;
         }
 
         digit_buffer = realloc(digit_buffer, i); // digit is now 1 larger.
