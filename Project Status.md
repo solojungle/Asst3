@@ -304,3 +304,8 @@ Status Update - Dennis Kager - 5/07/19 @ 5:53PM
 Status Update - Dennis Kager - 5/07/19 @ 7:13PM
 ------------------------------------------------
 * Added new function removeEntry() which individualizes the removal of files from the manifest to keep the log more accurate
+
+Status Update - Ali Awari - 5/7/19 @ 7:58PM
+------------------------------------------------
+* Added preliminary commit()
+* Added many helper functions()
