@@ -286,11 +286,11 @@ void sendArgument(char *argument, char *command, char *repo, char *argv[])
     }
     else if (strcmp(command, "4") == 0)
     { // Commit
-    	commit(argv[2], server.socket_fd);
+        commit(argv[2], server.socket_fd);
     }
     else if (strcmp(command, "5") == 0)
     { // Push
-    	push(argv[2], server.socket_fd);
+        push(argv[2], server.socket_fd);
     }
     else if (strcmp(command, "6") == 0)
     { // Create
@@ -1060,7 +1060,7 @@ void commit(char *repo, int fd)
     }
 
     // the client should should first check to make sure that the .Manifest versions match.
-    if (client_manifest->repoVersion != server_manifest->repoVersion)
+    if (strcmp(client_manifest->repoVersion, server_manifest->repoVersion) != 0)
     {
         fprintf(stderr, "%sError%s: .Manifest versions do not match, please UPDATE local project.\n", RED, RESET);
         return;
@@ -1138,7 +1138,6 @@ struct project_manifest *grabClientManifest(char *repo) // wrapper for fetchMani
 
 struct files_type *grabClientUpdate(char *repo)
 {
-
     int update_path_length = 9 + strlen(repo) + 8 + 1; // Projects/:9 + <project_name> + /.Update:8 + \0:1
     char update_path[update_path_length];
     memset(update_path, '\0', update_path_length);
@@ -1148,9 +1147,9 @@ struct files_type *grabClientUpdate(char *repo)
     strcat(update_path, "/.Update");
 
     int fd;
-    if ((fd = open(update_path, O_RDONLY)) != -1)
+    if ((fd = open(update_path, O_RDONLY)) == -1)
     {
-        fprintf(stderr, "Error: .Update file could not be found.\n");
+        fprintf(stderr, "Warning: .Update file could not be found.\n");
         return NULL;
     }
 
@@ -1171,6 +1170,8 @@ struct files_type *grabClientUpdate(char *repo)
         fprintf(stderr, "Error: Failed to read .Update file.\n");
         return NULL;
     }
+
+    close(fd);
 
     return initializeFileNode(update_path, strlen(update_path), file_buffer, file_length);
 }
@@ -1247,54 +1248,41 @@ struct project_manifest *grabServerManifest(char *repo, int fd)
     return server_manifest;
 }
 
-void push(char *repo, int fd){
-	char **files;
-	//char *server_path;
-	char *commit_path = (char*)malloc((strlen(repo) + 20) * sizeof(char)); 
-	if(commit_path == NULL){
-		fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
-		return;
-	}
+void push(char *repo, int fd)
+{
+    char **files;
+    //char *server_path;
+    char *commit_path = (char *)malloc((strlen(repo) + 20) * sizeof(char));
+    if (commit_path == NULL)
+    {
+        fprintf(stderr, "Error: Malloc failed to allocate memory!\n");
+        return;
+    }
 
-	strcpy(commit_path, "./Projects/");
-	strcat(commit_path, repo);
-	strcat(commit_path, "/.commit\0");
+    strcpy(commit_path, "./Projects/");
+    strcat(commit_path, repo);
+    strcat(commit_path, "/.commit\0");
 
-
-	/*if (!existsOnServerRecv(fd)) //  if the project name doesn't exist on the server
+    /*if (!existsOnServerRecv(fd)) //  if the project name doesn't exist on the server
     {
         fprintf(stderr, "Error: Project does not exist on server.\n");
         return;
     }*/
-    
+
     int rd = open(commit_path, O_RDONLY);
-    
-    if(rd == -1){
-    	fprintf(stderr, "Error: .commit file does not exist! please run the commit function.\n");
-    	return;
+
+    if (rd == -1)
+    {
+        fprintf(stderr, "Error: .commit file does not exist! please run the commit function.\n");
+        return;
     }
-    
+
     close(rd);
     send(fd, repo, strlen(repo), 0);
-    
+
     files[0] = (char *)malloc(strlen(commit_path) * sizeof(char));
     strcpy(files[0], commit_path);
-    
+
     printf("path: %s\n", commit_path);
-	sendFiles(createFileList(files, 1), fd);
-
-	
-
-
+    sendFiles(createFileList(files, 1), fd);
 }
-
-
-
-
-
-
-
-
-
-
-
